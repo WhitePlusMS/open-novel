@@ -47,27 +47,51 @@ export async function POST(request: NextRequest) {
 
     console.log(`[CatchUp API] 收到追赶请求 - 当前轮次: ${currentRound}, 目标轮次: ${round}`);
 
-    // 3. 统计需要追赶的书籍
-    const behindBooks = await prisma.book.findMany({
+    await chapterWritingService.recordRoundGaps(season.id, round, 'ADMIN');
+
+    const gaps = await prisma.roundGap.findMany({
       where: {
         seasonId: season.id,
-        status: 'ACTIVE',
+        round,
+        status: 'OPEN',
       },
       include: {
-        author: { select: { nickname: true } },
-        _count: { select: { chapters: true } },
+        book: {
+          select: {
+            id: true,
+            title: true,
+            author: { select: { nickname: true } },
+          },
+        },
       },
     });
 
-    // 筛选 chapterCount < round 的书籍
-    const filteredBehindBooks = behindBooks.filter(book => book._count.chapters < round);
-
-    console.log(`[CatchUp API] 当前第 ${round} 轮，发现 ${filteredBehindBooks.length} 本需要追赶的书籍`);
-    filteredBehindBooks.forEach(book => {
-      console.log(`[CatchUp API] - "${book.title}" 当前 ${book._count.chapters} 章，需补 ${round - book._count.chapters} 章`);
+    const gapByBook = new Map<string, { id: string; title: string; author: string; chapterGaps: number[]; outlineGaps: number[] }>();
+    gaps.forEach((gap) => {
+      const existing = gapByBook.get(gap.bookId) ?? {
+        id: gap.bookId,
+        title: gap.book.title,
+        author: gap.book.author.nickname,
+        chapterGaps: [],
+        outlineGaps: [],
+      };
+      if (gap.gapType === 'CHAPTER') {
+        existing.chapterGaps.push(gap.chapterNumber);
+      } else {
+        existing.outlineGaps.push(gap.chapterNumber);
+      }
+      gapByBook.set(gap.bookId, existing);
     });
 
-    if (filteredBehindBooks.length === 0) {
+    const gapBooks = Array.from(gapByBook.values()).map((item) => ({
+      ...item,
+      chapterGaps: Array.from(new Set(item.chapterGaps)).sort((a, b) => a - b),
+      outlineGaps: Array.from(new Set(item.outlineGaps)).sort((a, b) => a - b),
+    }));
+
+    console.log(`[CatchUp API] 当前第 ${round} 轮，发现 ${gapBooks.length} 本存在缺口书籍`);
+
+    if (gaps.length === 0) {
       return NextResponse.json({
         code: 0,
         data: {
@@ -75,19 +99,19 @@ export async function POST(request: NextRequest) {
           seasonNumber: season.seasonNumber,
           currentRound,
           targetRound: round,
-          bookCount: 0,
-          message: '没有需要追赶的书籍',
+          gapCount: 0,
+          message: '没有缺口需要补齐',
         },
-        message: '没有需要追赶的书籍',
+        message: '没有缺口需要补齐',
       });
     }
 
-    // 4. 异步触发追赶模式（不阻塞 API 响应）
+    // 4. 异步触发补漏（不阻塞 API 响应）
     setTimeout(async () => {
       try {
-        await chapterWritingService.catchUpBooks(season.id, round);
+        await chapterWritingService.resolveRoundGaps(season.id, round);
       } catch (error) {
-        console.error('[CatchUp API] 追赶任务失败:', error);
+        console.error('[CatchUp API] 补漏任务失败:', error);
       }
     }, 100);
 
@@ -99,17 +123,11 @@ export async function POST(request: NextRequest) {
         seasonNumber: season.seasonNumber,
         currentRound,
         targetRound: round,
-        bookCount: filteredBehindBooks.length,
-        books: filteredBehindBooks.map((b) => ({
-          id: b.id,
-          title: b.title,
-          author: b.author.nickname,
-          currentChapter: b._count.chapters,
-          missingChapters: round - b._count.chapters,
-        })),
-        message: `正在为 ${filteredBehindBooks.length} 本书籍补齐到第 ${round} 章`,
+        gapCount: gaps.length,
+        books: gapBooks,
+        message: `正在为第 ${round} 轮缺口执行补漏`,
       },
-      message: `已触发追赶模式，正在为 ${filteredBehindBooks.length} 本书籍补齐到第 ${round} 章`,
+      message: `已触发补漏任务，正在处理第 ${round} 轮缺口`,
     });
   } catch (error) {
     console.error('[CatchUp API] 错误:', error);
@@ -138,21 +156,45 @@ export async function GET() {
 
     const currentRound = season.currentRound || 1;
 
-    // 获取所有书籍及其章节数
-    const books = await prisma.book.findMany({
+    const gaps = await prisma.roundGap.findMany({
       where: {
         seasonId: season.id,
-        status: 'ACTIVE',
+        round: currentRound,
+        status: 'OPEN',
       },
       include: {
-        author: { select: { nickname: true } },
-        _count: { select: { chapters: true } },
+        book: {
+          select: {
+            id: true,
+            title: true,
+            author: { select: { nickname: true } },
+          },
+        },
       },
     });
 
-    // 分类：正常进度 vs 落后
-    const normalBooks = books.filter(b => b._count.chapters >= currentRound);
-    const behindBooks = books.filter(b => b._count.chapters < currentRound);
+    const gapByBook = new Map<string, { id: string; title: string; author: string; chapterGaps: number[]; outlineGaps: number[] }>();
+    gaps.forEach((gap) => {
+      const existing = gapByBook.get(gap.bookId) ?? {
+        id: gap.bookId,
+        title: gap.book.title,
+        author: gap.book.author.nickname,
+        chapterGaps: [],
+        outlineGaps: [],
+      };
+      if (gap.gapType === 'CHAPTER') {
+        existing.chapterGaps.push(gap.chapterNumber);
+      } else {
+        existing.outlineGaps.push(gap.chapterNumber);
+      }
+      gapByBook.set(gap.bookId, existing);
+    });
+
+    const gapDetails = Array.from(gapByBook.values()).map((item) => ({
+      ...item,
+      chapterGaps: Array.from(new Set(item.chapterGaps)).sort((a, b) => a - b),
+      outlineGaps: Array.from(new Set(item.outlineGaps)).sort((a, b) => a - b),
+    }));
 
     return NextResponse.json({
       code: 0,
@@ -160,19 +202,11 @@ export async function GET() {
         seasonId: season.id,
         seasonNumber: season.seasonNumber,
         currentRound,
-        totalBooks: books.length,
-        normalBooks: normalBooks.length,
-        behindBooks: behindBooks.length,
-        // 落后书籍详情
-        behindDetails: behindBooks.map(b => ({
-          id: b.id,
-          title: b.title,
-          author: b.author.nickname,
-          currentChapter: b._count.chapters,
-          missingChapters: currentRound - b._count.chapters,
-        })),
+        gapCount: gaps.length,
+        gapBooks: gapDetails.length,
+        gapDetails,
       },
-      message: `当前第 ${currentRound} 轮，${behindBooks.length} 本书落后需追赶`,
+      message: `当前第 ${currentRound} 轮，${gapDetails.length} 本书存在缺口`,
     });
   } catch (error) {
     console.error('[CatchUp API] 获取状态错误:', error);

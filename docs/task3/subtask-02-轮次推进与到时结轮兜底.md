@@ -17,14 +17,10 @@
 - 到时后触发统一收尾逻辑（由子任务 06 或 01 里定义的缺口记录能力支撑）
 
 ## 实施步骤
-1. 在 AI_WORKING 的“任务占用判断”中加入到时判断
-2. 若到时：
-   - 标记本轮到时
-   - 写入未完成步骤清单（或缺口占位）
-   - 进入“待收尾”状态
-3. 若未到时：
-   - 继续保持原有 return 行为
-4. 确保到时后不会启动下一轮任务
+1. 修改 [season-auto-advance.service.ts](file:///e:/比赛/secondme/prj2on/src/services/season-auto-advance.service.ts#L164-L178) 的 AI_WORKING 任务占用判断：当存在 ROUND_CYCLE 且 status 为 PENDING/PROCESSING 时，不再直接 return，先计算是否已超出本轮时长。
+2. 到时判断使用 roundStartTime 与 roundDuration（沿用 getPhaseDurationMs 计算 AI_WORKING 最大时长），条件满足时写入 SeasonRound.status=TIMED_OUT 与 timedOutAt，并标记本轮“待收尾”。
+3. 到时后不触发下一轮任务与阶段切换，只允许本轮任务继续跑完；任务完成回调需进入统一收尾（由子任务 06 定义）。
+4. 未到时则保持原有 return 行为，避免无任务时的推进逻辑被影响。
 
 ## 关键逻辑示例
 - 到时判断条件：

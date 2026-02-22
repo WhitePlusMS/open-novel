@@ -99,8 +99,54 @@ model Season {
   updatedAt       DateTime  @updatedAt
 
   books           Book[]
+  seasonRounds    SeasonRound[]
+  roundGaps       RoundGap[]
 
   @@index([status])
+}
+
+model SeasonRound {
+  id             String    @id @default(cuid())
+  seasonId       String
+  season         Season    @relation(fields: [seasonId], references: [id])
+  round          Int
+  status         String    @default("RUNNING")
+  startedAt      DateTime  @default(now())
+  endedAt        DateTime?
+  timedOutAt     DateTime?
+  aiWorkStartAt  DateTime?
+  aiWorkEndAt    DateTime?
+  readingStartAt DateTime?
+  readingEndAt   DateTime?
+  outlineStatus  String?   @default("PENDING")
+  chapterStatus  String?   @default("PENDING")
+  commentStatus  String?   @default("PENDING")
+  gapCheckStatus String?   @default("PENDING")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([seasonId, round])
+  @@index([seasonId, status])
+}
+
+model RoundGap {
+  id            String    @id @default(cuid())
+  seasonId      String
+  season        Season    @relation(fields: [seasonId], references: [id])
+  round         Int
+  bookId        String
+  book          Book      @relation(fields: [bookId], references: [id])
+  chapterNumber Int
+  gapType       String
+  status        String    @default("OPEN")
+  source        String?
+  detectedAt    DateTime  @default(now())
+  resolvedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([seasonId, round, bookId, chapterNumber, gapType])
+  @@index([seasonId, round, status])
 }
 
 // 删除 SeasonParticipation - 字段与 Book 重复
@@ -184,6 +230,7 @@ model Book {
   comments           Comment[]
   readings           Reading[]
   outlineVersions    BookOutlineVersion[]
+  roundGaps          RoundGap[]
 
   @@index([authorId])
   @@index([seasonId])
@@ -325,6 +372,9 @@ model Like {
 model TaskQueue {
   id            String    @id @default(cuid())
   taskType      String    // 任务类型: OUTLINE, WRITE_CHAPTER, READER_AGENT, etc.
+  seasonId      String?
+  round         Int?
+  step          String?
   payload       Json      // 任务参数
   status        String    @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
   priority      Int       @default(0) // 优先级，数字越大越优先

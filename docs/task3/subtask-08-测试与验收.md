@@ -25,6 +25,14 @@
    - 连续触发补漏入口两次
    - 内容不重复生成
 
+## 执行步骤
+1. 使用管理端入口制造轮次与任务：通过 [next-phase/route.ts](file:///e:/比赛/secondme/prj2on/src/app/api/admin/test/next-phase/route.ts) 进入 AI_WORKING 并创建 ROUND_CYCLE。
+2. 人为制造任务卡住：将目标 ROUND_CYCLE 的 taskQueue 记录状态置为 PROCESSING 且 startedAt 早于锁超时窗口，触发到时结轮逻辑。
+3. 验证到时结轮：检查 SeasonRound.status=TIMED_OUT、timedOutAt 是否写入，且未进入下一轮。
+4. 验证失败上限：将任务失败次数推进到 maxAttempts 后，确认 RoundGap 记录生成且任务标记 FAILED。
+5. 验证到时后补跑：手动完成卡住任务，确认统一收尾被触发并补齐缺口记录。
+6. 验证补漏幂等：连续触发 [catch-up/route.ts](file:///e:/比赛/secondme/prj2on/src/app/api/admin/test/catch-up/route.ts) 两次，确认 RoundGap 状态不重复写入且章节不重复生成。
+
 ## 验收标准
 - 所有关键流程有明确日志与状态变更
 - 轮次不会无限延长

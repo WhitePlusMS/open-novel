@@ -15,9 +15,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { RoundPhase } from '@/types/season';
-import { outlineGenerationService } from '@/services/outline-generation.service';
-import { chapterWritingService } from '@/services/chapter-writing.service';
-import { readerAgentService } from '@/services/reader-agent.service';
+import { taskQueueService } from '@/services/task-queue.service';
+import { seasonAutoAdvanceService } from '@/services/season-auto-advance.service';
 import { requireAdmin, createUnauthorizedResponse, createForbiddenResponse } from '@/lib/utils/admin';
 
 // 阶段顺序
@@ -96,7 +95,6 @@ export async function POST(request: NextRequest) {
 
     console.log(`[NextPhase] 当前状态: 第 ${currentRound} 轮, 阶段=${currentPhase}`);
 
-    // 3. 根据动作推进
     let nextPhase: RoundPhase;
     let nextRound = currentRound;
 
@@ -162,184 +160,86 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 5. 更新赛季状态
-    await prisma.season.update({
-      where: { id: season.id },
-      data: {
-        currentRound: nextRound,
-        roundPhase: nextPhase,
-        roundStartTime: new Date(),
-      },
-    });
-
-    // 6. 根据阶段触发相应任务
     let taskResult: { type: string; message: string } | null = null;
 
-    if (nextPhase === 'AI_WORKING') {
-      // AI_WORKING 阶段：生成大纲和章节
-      // 第1轮次生成整本书大纲，后续轮次生成下一章大纲和章节
-      console.log(`[NextPhase] 触发AI创作任务 - 第 ${nextRound} 轮`);
-      setTimeout(async () => {
-        try {
-          if (nextRound === 1) {
-            // 第1轮：生成整本书的5章大纲
-            await outlineGenerationService.generateOutlinesForSeason(season.id);
-          } else {
-            // 后续轮次：为每本书并发生成下一章大纲
-            const books = await prisma.book.findMany({
-              where: { seasonId: season.id, status: 'ACTIVE' },
-              select: { id: true },
-            });
-            await outlineGenerationService.generateNextChapterOutlinesForBooks(
-              books.map((book) => book.id),
-              nextRound
-            );
-          }
-        } catch (error) {
-          console.error('[NextPhase] 大纲生成任务失败:', error);
-        }
-      }, 100);
-      taskResult = {
-        type: 'OUTLINE_GENERATION',
-        message: nextRound === 1
-          ? '正在为所有书籍生成整本书大纲'
-          : `正在为所有书籍生成第 ${nextRound} 章大纲`,
-      };
-    // 注意：由于阶段简化为 AI_WORKING 和 HUMAN_READING 两个阶段，
-    // 大纲生成和章节创作都在 AI_WORKING 阶段完成
-    // 此分支已合并到上面的 AI_WORKING 处理中
-      // 逻辑：先检测落后书籍并追赶，再创作当前轮次章节，最后验证并重试失败章节
-      console.log(`[NextPhase] 触发章节创作任务 - 第 ${nextRound} 轮`);
-      setTimeout(async () => {
-        try {
-          // 1. 检测是否有落后书籍
-          const allBooks1 = await prisma.book.findMany({
-            where: {
-              seasonId: season.id,
-              status: 'ACTIVE',
-            },
-            include: {
-              _count: { select: { chapters: true } },
-            },
+    if (currentPhase === 'AI_WORKING' && nextPhase === 'HUMAN_READING') {
+      const runningTask = await prisma.taskQueue.findFirst({
+        where: {
+          taskType: 'ROUND_CYCLE',
+          status: { in: ['PENDING', 'PROCESSING'] },
+          seasonId: season.id,
+          round: currentRound,
+        },
+      });
+      const roundRecord = await prisma.seasonRound.findUnique({
+        where: { seasonId_round: { seasonId: season.id, round: currentRound } },
+      });
+      if (runningTask || (roundRecord && !roundRecord.endedAt)) {
+        return NextResponse.json({
+          code: 400,
+          data: null,
+          message: '当前轮次任务仍在执行，无法手动切换阶段',
+        });
+      }
+      await seasonAutoAdvanceService.advanceToNextRound(season.id, currentRound);
+      taskResult = { type: 'PHASE_SWITCH', message: '已切换到 HUMAN_READING' };
+    } else if (nextPhase === 'AI_WORKING') {
+      if (currentPhase === 'HUMAN_READING') {
+        const roundRecord = await prisma.seasonRound.findUnique({
+          where: { seasonId_round: { seasonId: season.id, round: currentRound } },
+        });
+        if (roundRecord && !roundRecord.endedAt) {
+          return NextResponse.json({
+            code: 400,
+            data: null,
+            message: '当前轮次未完成收尾，无法进入下一轮',
           });
-
-          // 筛选 chapterCount < nextRound 的书籍
-          const behindBooks = allBooks1.filter(book => book._count.chapters < nextRound);
-
-          if (behindBooks.length > 0) {
-            console.log(`[NextPhase] 发现 ${behindBooks.length} 本落后书籍，先执行追赶`);
-            behindBooks.forEach(b => {
-              console.log(`[NextPhase] - "${b.title}" 当前 ${b._count.chapters} 章，需补 ${nextRound - b._count.chapters} 章`);
-            });
-
-            // 执行追赶：为所有落后书籍补齐到当前轮次
-            await chapterWritingService.catchUpBooks(season.id, nextRound);
-            console.log(`[NextPhase] 追赶完成`);
-          } else {
-            // 没有落后书籍，正常创建第 nextRound 章
-            console.log(`[NextPhase] 没有落后书籍，创建第 ${nextRound} 章`);
-            await chapterWritingService.writeChaptersForSeason(season.id, nextRound);
-          }
-
-          // 2. 验证：检查是否所有书籍都达到了当前轮次
-          console.log(`[NextPhase] 验证章节完成情况...`);
-          const allBooks2 = await prisma.book.findMany({
-            where: {
-              seasonId: season.id,
-              status: 'ACTIVE',
-            },
-            include: {
-              _count: { select: { chapters: true } },
-            },
-          });
-
-          // 筛选 chapterCount < nextRound 的书籍
-          const finalCheck = allBooks2.filter(book => book._count.chapters < nextRound);
-
-          if (finalCheck.length > 0) {
-            console.log(`[NextPhase] 发现 ${finalCheck.length} 本书籍章节数未达标，进行重试`);
-            finalCheck.forEach(b => {
-              console.log(`[NextPhase] - "${b.title}" 当前 ${b._count.chapters} 章，需补到 ${nextRound} 章`);
-            });
-            // 重试：重新执行追赶
-            await chapterWritingService.catchUpBooks(season.id, nextRound);
-            console.log(`[NextPhase] 重试完成`);
-
-            // 再次验证
-            const allBooks3 = await prisma.book.findMany({
-              where: {
-                seasonId: season.id,
-                status: 'ACTIVE',
-              },
-              include: {
-                _count: { select: { chapters: true } },
-              },
-            });
-            const reCheck = allBooks3.filter(book => book._count.chapters < nextRound).length;
-            if (reCheck > 0) {
-              console.warn(`[NextPhase] 警告：仍有 ${reCheck} 本书籍未完成，可能需要人工检查`);
-            }
-          } else {
-            console.log(`[NextPhase] 验证通过：所有书籍都已达到第 ${nextRound} 章`);
-          }
-        } catch (error) {
-          console.error('[NextPhase] 章节创作任务失败:', error);
         }
-      }, 100);
-      taskResult = {
-        type: 'CHAPTER_WRITING',
-        message: `正在为所有书籍创作第 ${nextRound} 章正文`,
-      };
+      }
+      const roundStartTime = new Date();
+      await prisma.season.update({
+        where: { id: season.id },
+        data: {
+          currentRound: nextRound,
+          roundPhase: 'AI_WORKING',
+          roundStartTime: roundStartTime,
+          aiWorkStartTime: roundStartTime,
+        },
+      });
+      await prisma.seasonRound.upsert({
+        where: { seasonId_round: { seasonId: season.id, round: nextRound } },
+        update: {
+          status: 'RUNNING',
+          aiWorkStartAt: roundStartTime,
+          startedAt: roundStartTime,
+        },
+        create: {
+          seasonId: season.id,
+          round: nextRound,
+          status: 'RUNNING',
+          aiWorkStartAt: roundStartTime,
+          startedAt: roundStartTime,
+        },
+      });
+      const task = await taskQueueService.create({
+        taskType: 'ROUND_CYCLE',
+        payload: { seasonId: season.id, round: nextRound },
+        priority: 10,
+      });
+      taskResult = { type: 'ROUND_CYCLE', message: `已创建 ROUND_CYCLE 任务(${task.id})` };
     } else if (nextPhase === 'HUMAN_READING') {
-      // HUMAN_READING 阶段：触发 Reader Agents 阅读最新创作的章节
-      // 读取当前已创作的最大章节号
-      console.log(`[NextPhase] 触发 Reader Agents 阅读任务 - 第 ${nextRound} 轮`);
-      setTimeout(async () => {
-        try {
-          // 获取当前赛季所有已发布章节
-          const recentChapters = await prisma.chapter.findMany({
-            where: {
-              book: { seasonId: season.id },
-              status: 'PUBLISHED',
-            },
-            select: {
-              id: true,
-              bookId: true,
-              chapterNumber: true,
-            },
-          });
-
-          if (recentChapters.length === 0) {
-            console.log(`[NextPhase] 没有已发布的章节`);
-            return;
-          }
-
-          // 找出所有书中已创作的最大章节号
-          const maxChapterNumber = Math.max(...recentChapters.map(c => c.chapterNumber));
-          console.log(`[NextPhase] 当前最大章节号: ${maxChapterNumber}`);
-
-          // 筛选出最大章节号的章节（即最新创作的章节）
-          const latestChapters = recentChapters.filter(
-            (c) => c.chapterNumber === maxChapterNumber
-          );
-
-          console.log(`[NextPhase] 发现 ${latestChapters.length} 个第 ${maxChapterNumber} 章待阅读`);
-
-          await readerAgentService.batchDispatchReaderAgents(
-            latestChapters.map((chapter) => ({
-              chapterId: chapter.id,
-              bookId: chapter.bookId,
-              chapterNumber: chapter.chapterNumber,
-            }))
-          );
-        } catch (error) {
-          console.error('[NextPhase] Reader Agents 任务失败:', error);
-        }
-      }, 100);
-      taskResult = {
-        type: 'READER_ACTIONS',
-        message: `正在调度 Reader Agents 阅读最新章节`,
-      };
+      const roundRecord = await prisma.seasonRound.findUnique({
+        where: { seasonId_round: { seasonId: season.id, round: currentRound } },
+      });
+      if (roundRecord && !roundRecord.endedAt) {
+        return NextResponse.json({
+          code: 400,
+          data: null,
+          message: '当前轮次未完成收尾，无法进入下一轮',
+        });
+      }
+      await seasonAutoAdvanceService.advanceToNextRound(season.id, currentRound);
+      taskResult = { type: 'PHASE_SWITCH', message: '已切换到 HUMAN_READING' };
     }
 
     // 7. 获取参与书籍

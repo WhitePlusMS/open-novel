@@ -10,7 +10,8 @@
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "prisma generate && node --test --require ts-node/register tests/**/*.test.cjs"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
@@ -40,6 +41,7 @@
     "eslint-config-next": "14.2.35",
     "postcss": "^8",
     "prisma": "^5.22.0",
+    "ts-node": "^10.9.2",
     "typescript": "^5"
   }
 }

@@ -12,6 +12,7 @@ import { parseChapterWithRetry } from '@/lib/utils/llm-parser';
 import { readerAgentService } from './reader-agent.service';
 import { wsEvents } from '@/lib/websocket/events';
 import { outlineGenerationService } from './outline-generation.service';
+import { buildRoundGapsFromBooks } from '@/lib/utils/round-gap';
 
 // Agent 配置接口
 interface AgentConfig {
@@ -625,6 +626,109 @@ export class ChapterWritingService {
     }
 
     console.log(`[CatchUp] 追赶模式完成 - ${books.length} 本书籍已处理`);
+  }
+
+  async detectRoundGaps(seasonId: string, round: number): Promise<Array<{ bookId: string; chapterNumber: number; gapType: 'OUTLINE' | 'CHAPTER' }>> {
+    const books = await prisma.book.findMany({
+      where: {
+        seasonId,
+        status: 'ACTIVE',
+      },
+      select: {
+        id: true,
+        chapters: { select: { chapterNumber: true } },
+        chaptersPlan: true,
+      },
+    });
+
+    return buildRoundGapsFromBooks(books, round);
+  }
+
+  async recordRoundGaps(seasonId: string, round: number, source: string): Promise<void> {
+    const gaps = await this.detectRoundGaps(seasonId, round);
+    if (gaps.length === 0) {
+      await prisma.seasonRound.upsert({
+        where: { seasonId_round: { seasonId, round } },
+        update: { gapCheckStatus: 'DONE' },
+        create: { seasonId, round, gapCheckStatus: 'DONE' },
+      });
+      return;
+    }
+
+    await prisma.roundGap.createMany({
+      data: gaps.map((gap) => ({
+        seasonId,
+        round,
+        bookId: gap.bookId,
+        chapterNumber: gap.chapterNumber,
+        gapType: gap.gapType,
+        status: 'OPEN',
+        source,
+      })),
+      skipDuplicates: true,
+    });
+    await prisma.seasonRound.upsert({
+      where: { seasonId_round: { seasonId, round } },
+      update: { gapCheckStatus: 'DONE' },
+      create: { seasonId, round, gapCheckStatus: 'DONE' },
+    });
+  }
+
+  async resolveRoundGaps(seasonId: string, round: number): Promise<void> {
+    const openGaps: Array<{ id: string; bookId: string; chapterNumber: number; gapType: string }> = await prisma.roundGap.findMany({
+      where: {
+        seasonId,
+        round,
+        status: 'OPEN',
+      },
+      select: {
+        id: true,
+        bookId: true,
+        chapterNumber: true,
+        gapType: true,
+      },
+    });
+
+    if (openGaps.length === 0) {
+      return;
+    }
+
+    const outlineByRound = new Map<number, string[]>();
+    const chapterByRound = new Map<number, string[]>();
+    openGaps.forEach((gap) => {
+      const mapTarget = gap.gapType === 'OUTLINE' ? outlineByRound : chapterByRound;
+      const list = mapTarget.get(gap.chapterNumber) ?? [];
+      if (!list.includes(gap.bookId)) {
+        list.push(gap.bookId);
+      }
+      mapTarget.set(gap.chapterNumber, list);
+    });
+
+    const outlineRounds = Array.from(outlineByRound.keys()).sort((a, b) => a - b);
+    for (const chapterNum of outlineRounds) {
+      const bookIds = outlineByRound.get(chapterNum) ?? [];
+      if (bookIds.length === 0) continue;
+      await outlineGenerationService.generateNextChapterOutlinesForBooks(bookIds, chapterNum);
+    }
+
+    const writeRounds = Array.from(chapterByRound.keys()).sort((a, b) => a - b);
+    for (const chapterNum of writeRounds) {
+      const bookIds = chapterByRound.get(chapterNum) ?? [];
+      if (bookIds.length === 0) continue;
+      await this.writeChaptersForSeason(seasonId, chapterNum, bookIds);
+    }
+
+    const remainingGaps = await this.detectRoundGaps(seasonId, round);
+    const remainingSet = new Set(remainingGaps.map((gap) => `${gap.bookId}:${gap.chapterNumber}:${gap.gapType}`));
+    const resolvedIds = openGaps
+      .filter((gap) => !remainingSet.has(`${gap.bookId}:${gap.chapterNumber}:${gap.gapType}`))
+      .map((gap) => gap.id);
+    if (resolvedIds.length > 0) {
+      await prisma.roundGap.updateMany({
+        where: { id: { in: resolvedIds } },
+        data: { status: 'RESOLVED', resolvedAt: new Date() },
+      });
+    }
   }
 
   /**

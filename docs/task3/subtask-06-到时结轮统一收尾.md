@@ -15,14 +15,10 @@
 - 收尾仅针对大纲与章节缺口
 
 ## 实施步骤
-1. 定义统一收尾函数：
-   - 读取本轮应有内容
-   - 检测缺口（仅大纲/章节）
-   - 写入缺口记录
-   - 标记本轮完成
-2. 在到时结轮时写入 timedOutAt
-3. 在 ROUND_CYCLE 或 CATCH_UP 任务完成后：
-   - 若本轮已到时，强制触发收尾
+1. 在 [season-auto-advance.service.ts](file:///e:/比赛/secondme/prj2on/src/services/season-auto-advance.service.ts) 或 [task-worker.service.ts](file:///e:/比赛/secondme/prj2on/src/services/task-worker.service.ts) 中定义统一收尾入口（如 finalizeRound）：读取本轮应有内容并只检测大纲/章节缺口。
+2. 收尾入口写入 RoundGap（OPEN），并更新 SeasonRound.status=COMPLETED/TIMED_OUT、endedAt、timedOutAt 等字段。
+3. 在到时结轮时调用统一收尾入口，标记本轮到时并完成收尾，不触发下一轮。
+4. 在 ROUND_CYCLE 与 CATCH_UP 任务完成后，若本轮已到时，必须再次调用统一收尾入口确保缺口记录完整。
 
 ## 验收标准
 - 到时结轮后缺口被完整记录

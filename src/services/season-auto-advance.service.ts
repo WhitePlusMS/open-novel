@@ -161,91 +161,106 @@ export class SeasonAutoAdvanceService {
       return;
     }
 
-    if (season.roundPhase === 'AI_WORKING') {
+    let currentPhase = (season.roundPhase as RoundPhase) || 'NONE';
+    let currentRound = season.currentRound || 1;
+    const phaseStartTime = season.roundStartTime || season.startTime || now();
+
+    if (currentPhase === 'AI_WORKING') {
       const runningTask = await prisma.taskQueue.findFirst({
         where: {
           taskType: 'ROUND_CYCLE',
           status: { in: ['PENDING', 'PROCESSING'] },
-          AND: [
-            { payload: { path: ['seasonId'], equals: season.id } },
-            { payload: { path: ['round'], equals: Number(season.currentRound || 1) } },
-          ],
+          seasonId: season.id,
+          round: Number(currentRound),
         },
       });
+      const remainingMs = getPhaseRemainingTime(season, currentPhase);
       if (runningTask) {
-        console.log(`[SeasonAutoAdvance] AI_WORKING 中存在任务，跳过推进: taskId=${runningTask.id}, status=${runningTask.status}, seasonId=${season.id}, round=${season.currentRound}`);
+        if (remainingMs <= 0) {
+          await this.forceEndRoundAndEnterReading(season.id, currentRound);
+        } else {
+          console.log(`[SeasonAutoAdvance] AI_WORKING 中存在任务，跳过推进: taskId=${runningTask.id}, status=${runningTask.status}, seasonId=${season.id}, round=${currentRound}, remainingMs=${remainingMs}`);
+        }
+        return;
+      }
+      if (remainingMs <= 0) {
+        await this.forceEndRoundAndEnterReading(season.id, currentRound);
+      } else {
+        console.log(`[SeasonAutoAdvance] AI_WORKING 等待任务收尾: seasonId=${season.id}, round=${currentRound}, remainingMs=${remainingMs}`);
+      }
+      return;
+    }
+
+    const transitions: Array<{ round: number; phase: RoundPhase; startTime: Date }> = [];
+
+    if (currentPhase === 'NONE') {
+      console.log(`[SeasonAutoAdvance] 赛季未开始，进入第一轮 AI_WORKING: seasonId=${season.id}`);
+      currentPhase = 'AI_WORKING';
+      currentRound = 1;
+      transitions.push({ round: currentRound, phase: currentPhase, startTime: phaseStartTime });
+    }
+
+    if (currentPhase === 'HUMAN_READING') {
+      const roundRecord = await prisma.seasonRound.findUnique({
+        where: { seasonId_round: { seasonId: season.id, round: currentRound } },
+      });
+      if (roundRecord && !roundRecord.endedAt) {
+        const remainingMs = getPhaseRemainingTime(season, currentPhase);
+        console.log(`[SeasonAutoAdvance] HUMAN_READING 等待收尾完成: seasonId=${season.id}, round=${currentRound}, remainingMs=${remainingMs}`);
         return;
       }
     }
 
-      let currentPhase = (season.roundPhase as RoundPhase) || 'NONE';
-      let currentRound = season.currentRound || 1;
-      // phaseStartTime 保持 UTC，用于时间比较
-      let phaseStartTime = season.roundStartTime || season.startTime || now();
+    const maxRounds = season.maxChapters || 7;
+    const maxTransitions = maxRounds * PHASE_ORDER.length + 2;
+    let safety = 0;
+    const nowUtcMs = nowMs(); // UTC 毫秒数
 
-      const transitions: Array<{ round: number; phase: RoundPhase; startTime: Date }> = [];
+    let loopPhaseStartTime = phaseStartTime;
+    while (safety < maxTransitions) {
+      const durationMs = getPhaseDurationMs(season, currentPhase);
+      const phaseStartTimeMs = getUtcTimeMs(loopPhaseStartTime);
+      const phaseEndTimeMs = phaseStartTimeMs + durationMs;
+      const timeLeft = phaseEndTimeMs - nowUtcMs;
+      console.log(`[SeasonAutoAdvance] Loop: seasonId=${season.id}, phase=${currentPhase}, round=${currentRound}, durationMs=${durationMs}, phaseStartTimeMs=${phaseStartTimeMs}, nowUtcMs=${nowUtcMs}, timeLeftMs=${timeLeft}`);
 
-      if (currentPhase === 'NONE') {
-        console.log(`[SeasonAutoAdvance] 赛季未开始，进入第一轮 AI_WORKING: seasonId=${season.id}`);
-        currentPhase = 'AI_WORKING';
-        currentRound = 1;
-        transitions.push({ round: currentRound, phase: currentPhase, startTime: phaseStartTime });
+      if (timeLeft > 5000) {
+        console.log(`[SeasonAutoAdvance] Time left > 5s, breaking loop: seasonId=${season.id}, phase=${currentPhase}, round=${currentRound}`);
+        break;
       }
 
-      const maxRounds = season.maxChapters || 7;
-      const maxTransitions = maxRounds * PHASE_ORDER.length + 2;
-      let safety = 0;
-      const nowUtcMs = nowMs(); // UTC 毫秒数
-
-      while (safety < maxTransitions) {
-        const durationMs = getPhaseDurationMs(season, currentPhase);
-        // 使用 getUtcTimeMs 获取阶段的 UTC 毫秒数
-        const phaseStartTimeMs = getUtcTimeMs(phaseStartTime);
-        const phaseEndTimeMs = phaseStartTimeMs + durationMs;
-        const timeLeft = phaseEndTimeMs - nowUtcMs;
-        console.log(`[SeasonAutoAdvance] Loop: seasonId=${season.id}, phase=${currentPhase}, round=${currentRound}, durationMs=${durationMs}, phaseStartTimeMs=${phaseStartTimeMs}, nowUtcMs=${nowUtcMs}, timeLeftMs=${timeLeft}`);
-
-        if (timeLeft > 5000) {
-          console.log(`[SeasonAutoAdvance] Time left > 5s, breaking loop: seasonId=${season.id}, phase=${currentPhase}, round=${currentRound}`);
-          break;
-        }
-
-        let nextRound = currentRound;
-        if (currentPhase === 'HUMAN_READING') {
-          // HUMAN_READING 阶段结束后，进入下一轮的 AI_WORKING
-          nextRound = currentRound + 1;
-        }
-
-        // 关键修改：当 AI_WORKING 阶段结束后，如果已达最大轮次，则结束赛季
-        // 而不是等到 HUMAN_READING 结束后才结束
-        if (currentPhase === 'AI_WORKING' && nextRound > maxRounds) {
-          console.log(`[SeasonAutoAdvance] AI_WORKING 已达最大轮次，自动结束赛季: seasonId=${season.id}, round=${currentRound}, maxRounds=${maxRounds}`);
-          await this.endSeason(season.id);
-          return;
-        }
-
-        // 如果是 HUMAN_READING 阶段结束后已达最大轮次，也结束
-        if (nextRound > maxRounds) {
-          console.log(`[SeasonAutoAdvance] HUMAN_READING 已达最大轮次，自动结束赛季: seasonId=${season.id}, round=${currentRound}, maxRounds=${maxRounds}`);
-          await this.endSeason(season.id);
-          return;
-        }
-
-        const nextPhase = getNextPhase(currentPhase);
-        phaseStartTime = new Date(phaseEndTimeMs);
-        currentPhase = nextPhase;
-        currentRound = nextRound;
-        transitions.push({ round: currentRound, phase: currentPhase, startTime: phaseStartTime });
-        safety += 1;
+      let nextRound = currentRound;
+      if (currentPhase === 'HUMAN_READING') {
+        nextRound = currentRound + 1;
       }
 
-      if (transitions.length === 0) {
-        const remainingMs = getPhaseRemainingTime(season, currentPhase);
-        if (remainingMs > 5000) {
+      if (currentPhase === 'AI_WORKING' && nextRound > maxRounds) {
+        console.log(`[SeasonAutoAdvance] AI_WORKING 已达最大轮次，自动结束赛季: seasonId=${season.id}, round=${currentRound}, maxRounds=${maxRounds}`);
+        await this.endSeason(season.id);
+        return;
+      }
+
+      if (nextRound > maxRounds) {
+        console.log(`[SeasonAutoAdvance] HUMAN_READING 已达最大轮次，自动结束赛季: seasonId=${season.id}, round=${currentRound}, maxRounds=${maxRounds}`);
+        await this.endSeason(season.id);
+        return;
+      }
+
+      const nextPhase = getNextPhase(currentPhase);
+      loopPhaseStartTime = new Date(phaseEndTimeMs);
+      currentPhase = nextPhase;
+      currentRound = nextRound;
+      transitions.push({ round: currentRound, phase: currentPhase, startTime: loopPhaseStartTime });
+      safety += 1;
+    }
+
+    if (transitions.length === 0) {
+      const remainingMs = getPhaseRemainingTime(season, currentPhase);
+      if (remainingMs > 5000) {
         console.log(`[SeasonAutoAdvance] 当前阶段剩余时间 > 5s，暂不推进: seasonId=${season.id}, phase=${currentPhase}, round=${currentRound}, remainingMs=${remainingMs}`);
-          return;
-        }
+        return;
       }
+    }
 
     if (transitions.length > 0) {
       console.log(`[SeasonAutoAdvance] 本次推进步骤: seasonId=${season.id}, count=${transitions.length}, transitions=${transitions.map(t => `${t.round}:${t.phase}`).join('|')}`);
@@ -279,6 +294,8 @@ export class SeasonAutoAdvanceService {
       });
 
       console.log(`[SeasonAutoAdvance] 已推进: seasonId=${seasonId}, round=${round}, phase=${getPhaseDisplayName(phase)}`);
+
+      await this.ensureSeasonRoundOnPhase(seasonId, round, phase, roundStartTime);
 
       // 触发相应的任务
       await this.triggerPhaseTask(seasonId, round, phase);
@@ -351,16 +368,128 @@ export class SeasonAutoAdvanceService {
     console.log(`[SeasonAutoAdvance] 时间计算: seasonId=${seasonId}, roundDurationMs=${roundDurationMs}, aiWorkMs=${aiWorkMs}, readingDurationMs=${readingDurationMs}`);
 
     // 更新阶段为 HUMAN_READING，设置阅读开始时间
+    const readingStartAt = new Date();
     await prisma.season.update({
       where: { id: seasonId },
       data: {
         roundPhase: 'HUMAN_READING',
-        roundStartTime: new Date(), // 阅读开始时间（即 AI 工作结束时间）
+        roundStartTime: readingStartAt,
         // 注意：currentRound 在 HUMAN_READING 阶段结束后才增加
       },
     });
 
+    await prisma.seasonRound.upsert({
+      where: { seasonId_round: { seasonId, round } },
+      update: {
+        aiWorkEndAt: readingStartAt,
+        readingStartAt,
+      },
+      create: {
+        seasonId,
+        round,
+        status: 'RUNNING',
+        aiWorkStartAt: season.aiWorkStartTime ?? readingStartAt,
+        aiWorkEndAt: readingStartAt,
+        readingStartAt,
+      },
+    });
+
     console.log(`[SeasonAutoAdvance] ✅ AI工作完成切换 HUMAN_READING: seasonId=${seasonId}, round=${round}, readingMinutes=${readingDurationMs / 60000}`);
+  }
+
+  public async finalizeRound(seasonId: string, round: number): Promise<void> {
+    const nowAt = new Date();
+    const existing = await prisma.seasonRound.findUnique({
+      where: { seasonId_round: { seasonId, round } },
+    });
+    const status = existing?.timedOutAt ? 'TIMED_OUT' : 'COMPLETED';
+    await prisma.seasonRound.upsert({
+      where: { seasonId_round: { seasonId, round } },
+      update: {
+        status,
+        endedAt: nowAt,
+      },
+      create: {
+        seasonId,
+        round,
+        status,
+        startedAt: nowAt,
+        endedAt: nowAt,
+      },
+    });
+  }
+
+  private async forceEndRoundAndEnterReading(seasonId: string, round: number): Promise<void> {
+    const nowAt = new Date();
+    await prisma.seasonRound.upsert({
+      where: { seasonId_round: { seasonId, round } },
+      update: {
+        status: 'TIMED_OUT',
+        timedOutAt: nowAt,
+        aiWorkEndAt: nowAt,
+        readingStartAt: nowAt,
+      },
+      create: {
+        seasonId,
+        round,
+        status: 'TIMED_OUT',
+        timedOutAt: nowAt,
+        aiWorkEndAt: nowAt,
+        readingStartAt: nowAt,
+      },
+    });
+    await prisma.season.update({
+      where: { id: seasonId },
+      data: {
+        roundPhase: 'HUMAN_READING',
+        roundStartTime: nowAt,
+      },
+    });
+    console.log(`[SeasonAutoAdvance] ⏰ 到时结轮，进入 HUMAN_READING: seasonId=${seasonId}, round=${round}`);
+  }
+
+  private async ensureSeasonRoundOnPhase(
+    seasonId: string,
+    round: number,
+    phase: RoundPhase,
+    roundStartTime?: Date
+  ): Promise<void> {
+    if (phase === 'AI_WORKING') {
+      const startAt = roundStartTime || new Date();
+      await prisma.seasonRound.upsert({
+        where: { seasonId_round: { seasonId, round } },
+        update: {
+          status: 'RUNNING',
+          aiWorkStartAt: startAt,
+          startedAt: startAt,
+        },
+        create: {
+          seasonId,
+          round,
+          status: 'RUNNING',
+          aiWorkStartAt: startAt,
+          startedAt: startAt,
+        },
+      });
+      return;
+    }
+    if (phase === 'HUMAN_READING') {
+      const readingStartAt = roundStartTime || new Date();
+      await prisma.seasonRound.upsert({
+        where: { seasonId_round: { seasonId, round } },
+        update: {
+          aiWorkEndAt: readingStartAt,
+          readingStartAt,
+        },
+        create: {
+          seasonId,
+          round,
+          status: 'RUNNING',
+          aiWorkEndAt: readingStartAt,
+          readingStartAt,
+        },
+      });
+    }
   }
 
   /**

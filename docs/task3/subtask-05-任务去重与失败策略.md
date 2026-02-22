@@ -16,12 +16,10 @@
 - 永久失败时写入缺口记录（RoundGap 或过渡字段）
 
 ## 实施步骤
-1. 在 TaskQueue 模型中新增字段并迁移
-2. 修改 create 去重逻辑为显式字段
-3. 修改 fail 逻辑：
-   - 未到上限继续重试
-   - 到达上限写入缺口并标记 FAILED
-4. 到时后的补跑严格遵守 maxAttempts
+1. 在 [schema.prisma](file:///e:/比赛/secondme/prj2on/prisma/schema.prisma) 的 TaskQueue 模型中新增 seasonId、round、step 字段并迁移。
+2. 修改 [task-queue.service.ts](file:///e:/比赛/secondme/prj2on/src/services/task-queue.service.ts) 的 create 去重逻辑：改为 seasonId + round + step + taskType 的显式判断，不再依赖 payload JSON path。
+3. 修改 fail 逻辑：当 attempts 达到 maxAttempts 时，调用统一缺口检测并写入 RoundGap，再标记 FAILED。
+4. 到时后的补跑仍由 TaskQueue 的 maxAttempts 约束，超过上限直接进入缺口记录，不再继续重试。
 
 ## 验收标准
 - 相同赛季/轮次/步骤不会重复创建任务

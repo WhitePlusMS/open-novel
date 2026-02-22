@@ -16,14 +16,10 @@
 - 缺口来源以 RoundGap 或过渡字段为准
 
 ## 实施步骤
-1. 在进入新一轮 AI_WORKING 前读取上一轮缺口
-2. 对缺口执行补漏：
-   - 缺大纲 → 补大纲
-   - 缺章节 → 补章节
-3. 在章节写作流程中，如果发现缺口则即时补
-4. 所有补漏动作必须幂等：
-   - 已存在内容不重复生成
-   - 已记录缺口不会重复写入
+1. 在进入新一轮 AI_WORKING 前读取上一轮 RoundGap（按 seasonId + round），只选择 gapType=OUTLINE/CHAPTER 且 status=OPEN。
+2. 基于缺口调用 [chapter-writing.service.ts](file:///e:/比赛/secondme/prj2on/src/services/chapter-writing.service.ts) 的追赶逻辑：缺大纲先调用 outlineGenerationService.generateNextChapterOutlinesForBooks，再调用 writeChaptersForSeason 生成缺失章节。
+3. 在章节写作流程中（writeChaptersForSeason 内部）如发现缺口，优先以“现有章节/大纲存在性”为幂等判定条件，避免重复生成。
+4. 补漏完成后更新 RoundGap.status=RESOLVED，并记录 resolvedAt，确保重复触发时不重复补写。
 
 ## 验收标准
 - 新轮次开始前缺口必被处理一次

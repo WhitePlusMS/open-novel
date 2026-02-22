@@ -5,7 +5,7 @@
  * 支持多种任务类型：ROUND_CYCLE, CATCH_UP, READER_AGENT
  */
 
-import { taskQueueService, TaskPayload } from './task-queue.service';
+import { taskQueueService } from './task-queue.service';
 import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@prisma/client';
 
@@ -77,6 +77,13 @@ const taskHandlers: Record<string, TaskHandler> = {
     console.log(`[TaskWorker] 书籍统计: total=${allBooks.length}, active=${activeBooks.length}, seasonId=${seasonId}, round=${round}`);
     setTaskProgress('ROUND_CYCLE_BOOKS_READY', `total=${allBooks.length}, active=${activeBooks.length}`);
 
+    const { chapterWritingService } = await import('./chapter-writing.service');
+    if ((round as number) > 1) {
+      console.log(`[TaskWorker] 🧩 步骤0: 补漏处理 start seasonId=${seasonId}, round=${round}`);
+      await chapterWritingService.resolveRoundGaps(seasonId as string, (round as number) - 1);
+      console.log(`[TaskWorker] ✅ 补漏处理完成: seasonId=${seasonId}, round=${(round as number) - 1}`);
+    }
+
     // 1. 大纲生成（第1轮生成整本，后续轮优化单章）
     const outlineStartAt = Date.now();
     console.log(`[TaskWorker] 📝 步骤1: 生成大纲 start seasonId=${seasonId}, round=${round}`);
@@ -100,7 +107,6 @@ const taskHandlers: Record<string, TaskHandler> = {
     const chapterStartAt = Date.now();
     console.log(`[TaskWorker] ✍️ 步骤2: 生成章节内容 start seasonId=${seasonId}, round=${round}, activeBooks=${activeBooks.length}`);
     setTaskProgress('ROUND_CYCLE_CHAPTER_START');
-    const { chapterWritingService } = await import('./chapter-writing.service');
     await chapterWritingService.writeChaptersForSeason(seasonId as string, round as number, activeBooks.map(b => b.id));
     console.log(`[TaskWorker] ✅ 章节生成完成: durationMs=${Date.now() - chapterStartAt}`);
     setTaskProgress('ROUND_CYCLE_CHAPTER_DONE');
@@ -109,43 +115,23 @@ const taskHandlers: Record<string, TaskHandler> = {
     console.log(`[TaskWorker] 🤖 步骤3: AI评论 (由 writeChaptersForSeason 内部触发)`);
     setTaskProgress('ROUND_CYCLE_READER_TRIGGERED');
 
-    // 4. 落后检测
-    console.log(`[TaskWorker] 🔍 步骤4: 落后检测 start seasonId=${seasonId}, round=${round}`);
-    setTaskProgress('ROUND_CYCLE_BEHIND_CHECK');
-    // 使用之前查询的 activeBooks 进行落后检测
-    const behindBooks = activeBooks.filter(book => {
-      const agentConfig = book.author.agentConfig as unknown as { maxChapters?: number } | null;
-      const maxChapters = agentConfig?.maxChapters || 5;
-      const currentChapters = book._count.chapters as number;
-      return currentChapters < maxChapters && currentChapters < (round as number);
-    });
-    console.log(`[TaskWorker] 落后书籍数量: ${behindBooks.length}, seasonId=${seasonId}, round=${round}`);
-    setTaskProgress('ROUND_CYCLE_BEHIND_RESULT', `count=${behindBooks.length}`);
+    // 4. 缺口检测
+    console.log(`[TaskWorker] 🔍 步骤4: 缺口检测 start seasonId=${seasonId}, round=${round}`);
+    setTaskProgress('ROUND_CYCLE_GAP_CHECK');
+    await chapterWritingService.recordRoundGaps(seasonId as string, round as number, 'ROUND_CYCLE');
+    setTaskProgress('ROUND_CYCLE_GAP_RECORDED');
 
-    if (behindBooks.length > 0) {
-      // 有落后：创建 CATCH_UP 任务
-      console.log(`[TaskWorker] ⚠️ 有落后书籍，创建 CATCH_UP 任务: count=${behindBooks.length}, seasonId=${seasonId}, round=${round}`);
-      const payload: TaskPayload = {
-        seasonId: String(seasonId),
-        round: Number(round),
-        bookIds: behindBooks.map((b: { id: string }) => b.id),
-      };
-      await taskQueueService.create({
-        taskType: 'CATCH_UP',
-        payload,
-        priority: 5,
-      });
-      console.log(`[TaskWorker] CATCH_UP 任务已创建: seasonId=${seasonId}, round=${round}`);
-      setTaskProgress('ROUND_CYCLE_CATCHUP_CREATED');
-    } else {
-      // 无落后：直接进入 HUMAN_READING
-      console.log(`[TaskWorker] ✅ 无落后书籍，准备切换到 HUMAN_READING: seasonId=${seasonId}, round=${round}`);
-      setTaskProgress('ROUND_CYCLE_ADVANCE_NEXT');
-      const { seasonAutoAdvanceService } = await import('./season-auto-advance.service');
-      await seasonAutoAdvanceService.advanceToNextRound(seasonId as string, round as number);
-      console.log(`[TaskWorker] ✅ advanceToNextRound 调用完成: seasonId=${seasonId}, round=${round}`);
-      setTaskProgress('ROUND_CYCLE_ADVANCE_DONE');
-    }
+    // 5. 统一收尾
+    const { seasonAutoAdvanceService } = await import('./season-auto-advance.service');
+    await seasonAutoAdvanceService.finalizeRound(seasonId as string, round as number);
+    setTaskProgress('ROUND_CYCLE_FINALIZED');
+
+    // 6. 切换到 HUMAN_READING
+    console.log(`[TaskWorker] ✅ 准备切换到 HUMAN_READING: seasonId=${seasonId}, round=${round}`);
+    setTaskProgress('ROUND_CYCLE_ADVANCE_NEXT');
+    await seasonAutoAdvanceService.advanceToNextRound(seasonId as string, round as number);
+    console.log(`[TaskWorker] ✅ advanceToNextRound 调用完成: seasonId=${seasonId}, round=${round}`);
+    setTaskProgress('ROUND_CYCLE_ADVANCE_DONE');
 
     console.log(`[TaskWorker] 🎉 ROUND_CYCLE 任务完成: seasonId=${seasonId}, round=${round}, durationMs=${Date.now() - taskStartAt}`);
     setTaskProgress('ROUND_CYCLE_DONE');
@@ -163,14 +149,10 @@ const taskHandlers: Record<string, TaskHandler> = {
     console.log(`[TaskWorker] 执行追赶任务: seasonId=${seasonId}, round=${round}, startedAt=${new Date(taskStartAt).toISOString()}`);
     setTaskProgress('CATCH_UP_START', `seasonId=${seasonId}, round=${round}`);
 
-    // 追赶所有落后书籍
-    await chapterWritingService.catchUpBooks(seasonId as string, round as number);
-    setTaskProgress('CATCH_UP_WRITE_DONE');
-
-    // 追赶完成后切换阶段
-    const { seasonAutoAdvanceService } = await import('./season-auto-advance.service');
-    await seasonAutoAdvanceService.advanceToNextRound(seasonId as string, round as number);
-    setTaskProgress('CATCH_UP_ADVANCE_DONE');
+    await chapterWritingService.recordRoundGaps(seasonId as string, round as number, 'CATCH_UP');
+    setTaskProgress('CATCH_UP_GAP_RECORDED');
+    await chapterWritingService.resolveRoundGaps(seasonId as string, round as number);
+    setTaskProgress('CATCH_UP_RESOLVED');
     console.log(`[TaskWorker] 追赶任务完成: seasonId=${seasonId}, round=${round}, durationMs=${Date.now() - taskStartAt}`);
   },
 

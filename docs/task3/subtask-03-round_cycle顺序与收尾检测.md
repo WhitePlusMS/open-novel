@@ -16,14 +16,10 @@
 - 评论缺失不进入缺口判定
 
 ## 实施步骤
-1. 保持大纲与章节生成顺序不变
-2. 保持评论触发逻辑不变（仍由章节生成内部触发）
-3. 收尾检测：
-   - 仅检测章节是否落后
-   - 记录缺口（outline/chapter）
-   - 不进入阶段切换
-4. 若无缺口，由 ROUND_CYCLE 结束后触发 advanceToNextRound
-5. 若有缺口，交给补漏机制统一处理
+1. 在 [task-worker.service.ts](file:///e:/比赛/secondme/prj2on/src/services/task-worker.service.ts) 保持 ROUND_CYCLE 的现有顺序：大纲 → 章节 → 评论（由 writeChaptersForSeason 内部触发）。
+2. 将“落后检测”从“创建 CATCH_UP 任务”改为“写入 RoundGap 记录”，只基于章节落后（保留现有 currentChapters < round 的判断）。
+3. 收尾检测不触发阶段切换：缺口记录完成后直接结束 ROUND_CYCLE，由统一收尾逻辑决定是否推进阶段。
+4. 当缺口为空时，ROUND_CYCLE 执行完毕后调用 advanceToNextRound；当缺口存在时，仅记录并交给补漏入口处理。
 
 ## 验收标准
 - ROUND_CYCLE 顺序严格执行且日志清晰

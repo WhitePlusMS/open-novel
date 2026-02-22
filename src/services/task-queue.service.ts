@@ -21,6 +21,7 @@ export interface TaskPayload {
   bookId?: string;
   chapterId?: string;
   round?: number;
+  step?: string;
   [key: string]: unknown;
 }
 
@@ -29,6 +30,7 @@ export interface CreateTaskDto {
   payload: TaskPayload;
   priority?: number;
   maxAttempts?: number;
+  step?: string;
 }
 
 export interface TaskItem {
@@ -39,6 +41,9 @@ export interface TaskItem {
   priority: number;
   attempts: number;
   maxAttempts: number;
+  seasonId?: string;
+  round?: number;
+  step?: string;
   errorMessage?: string;
   startedAt?: Date;
   completedAt?: Date;
@@ -53,6 +58,7 @@ export class TaskQueueService {
   async create(dto: CreateTaskDto): Promise<TaskItem> {
     const seasonId = dto.payload.seasonId;
     const round = dto.payload.round;
+    const step = dto.step ?? dto.payload.step ?? dto.taskType;
     if (
       seasonId &&
       round &&
@@ -62,20 +68,22 @@ export class TaskQueueService {
         where: {
           taskType: dto.taskType,
           status: { in: ['PENDING', 'PROCESSING'] },
-          AND: [
-            { payload: { path: ['seasonId'], equals: String(seasonId) } },
-            { payload: { path: ['round'], equals: Number(round) } },
-          ],
+          seasonId: String(seasonId),
+          round: Number(round),
+          step,
         },
       });
       if (existing) {
-        console.log(`[TaskQueue] Skip duplicate task: type=${existing.taskType}, id=${existing.id}, seasonId=${seasonId}, round=${round}, status=${existing.status}`);
+        console.log(`[TaskQueue] Skip duplicate task: type=${existing.taskType}, id=${existing.id}, seasonId=${seasonId}, round=${round}, step=${step}, status=${existing.status}`);
         return this.formatTask(existing);
       }
     }
     const task = await prisma.taskQueue.create({
       data: {
         taskType: dto.taskType,
+        seasonId: seasonId ? String(seasonId) : undefined,
+        round: round ?? undefined,
+        step,
         payload: dto.payload as Prisma.InputJsonValue,
         status: 'PENDING',
         priority: dto.priority ?? 0,
@@ -84,7 +92,7 @@ export class TaskQueueService {
       },
     });
 
-    console.log(`[TaskQueue] Created task: type=${task.taskType}, id=${task.id}, seasonId=${seasonId ?? 'unknown'}, round=${round ?? 'unknown'}, priority=${task.priority}`);
+    console.log(`[TaskQueue] Created task: type=${task.taskType}, id=${task.id}, seasonId=${seasonId ?? 'unknown'}, round=${round ?? 'unknown'}, step=${step ?? 'unknown'}, priority=${task.priority}`);
     return this.formatTask(task);
   }
 
@@ -184,6 +192,7 @@ export class TaskQueueService {
         },
       });
       console.error(`[TaskQueue] Task failed permanently: id=${taskId}`, errorMessage);
+      await this.recordRoundGapsAfterFailure(task);
     }
   }
 
@@ -241,6 +250,9 @@ export class TaskQueueService {
   private formatTask(task: {
     id: string;
     taskType: string;
+    seasonId?: string | null;
+    round?: number | null;
+    step?: string | null;
     payload: Prisma.JsonValue;
     status: string;
     priority: number;
@@ -260,12 +272,30 @@ export class TaskQueueService {
       priority: task.priority,
       attempts: task.attempts,
       maxAttempts: task.maxAttempts,
+      seasonId: task.seasonId ?? undefined,
+      round: task.round ?? undefined,
+      step: task.step ?? undefined,
       errorMessage: task.errorMessage ?? undefined,
       startedAt: task.startedAt ?? undefined,
       completedAt: task.completedAt ?? undefined,
       createdAt: task.createdAt,
       updatedAt: task.updatedAt,
     };
+  }
+
+  private async recordRoundGapsAfterFailure(task: {
+    taskType: string;
+    seasonId?: string | null;
+    round?: number | null;
+    payload: Prisma.JsonValue;
+  }): Promise<void> {
+    if (task.taskType !== 'ROUND_CYCLE' && task.taskType !== 'CATCH_UP') return;
+    const payload = task.payload as TaskPayload;
+    const seasonId = task.seasonId ?? payload.seasonId;
+    const round = task.round ?? payload.round;
+    if (!seasonId || !round) return;
+    const { chapterWritingService } = await import('./chapter-writing.service');
+    await chapterWritingService.recordRoundGaps(seasonId, round, 'TASK_FAILED');
   }
 }
 
