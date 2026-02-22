@@ -493,7 +493,8 @@ export class OutlineGenerationService {
     await this.runWithConcurrency(jobs, dbConcurrency, async (job) => {
       const chapters = Array.isArray(job.outlineData.chapters) ? job.outlineData.chapters : [];
       if (chapters.length === 0) {
-        throw new Error(`[Outline] 大纲缺少章节数据，无法保存: bookId=${job.bookId}`);
+        console.warn(`[Outline] 大纲缺少章节数据，跳过保存: bookId=${job.bookId}, title=${job.outlineData.title || ''}`);
+        return;
       }
       const characters = Array.isArray(job.outlineData.characters) ? job.outlineData.characters : [];
 

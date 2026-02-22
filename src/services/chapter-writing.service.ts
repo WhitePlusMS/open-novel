@@ -339,10 +339,10 @@ export class ChapterWritingService {
       }
     );
 
-    console.log(`[ChapterWrite] 解析结果 - title: ${chapterData.title}, contentLength: ${chapterData.content.length}`);
+    console.log(`[ChapterWrite] 解析结果: bookId=${prepared.bookId}, chapter=${prepared.chapterNumber}, title=${chapterData.title}, contentLength=${chapterData.content.length}`);
 
     if (!chapterData.content) {
-      console.error(`[ChapterWrite] 章节内容为空`);
+      console.error(`[ChapterWrite] 章节内容为空: bookId=${prepared.bookId}, chapter=${prepared.chapterNumber}`);
       throw new Error('LLM 未返回章节内容');
     }
 
@@ -354,19 +354,45 @@ export class ChapterWritingService {
     prepared: PreparedChapterGeneration,
     chapterData: GeneratedChapter
   ): Promise<{ chapterId: string; bookId: string; chapterNumber: number; title: string }> {
-    const newChapter = await prisma.chapter.create({
-      data: {
-        bookId: prepared.bookId,
-        chapterNumber: prepared.chapterNumber,
-        title: chapterData.title,
-        content: chapterData.content,
-        status: 'PUBLISHED',
-        publishedAt: new Date(),
-        contentLength: chapterData.content.length,
-      },
-    });
+    let newChapter;
+    try {
+      newChapter = await prisma.chapter.create({
+        data: {
+          bookId: prepared.bookId,
+          chapterNumber: prepared.chapterNumber,
+          title: chapterData.title,
+          content: chapterData.content,
+          status: 'PUBLISHED',
+          publishedAt: new Date(),
+          contentLength: chapterData.content.length,
+        },
+      });
+    } catch (error) {
+      const code = (error as { code?: string }).code;
+      if (code === 'P2002') {
+        const existing = await prisma.chapter.findUnique({
+          where: {
+            bookId_chapterNumber: {
+              bookId: prepared.bookId,
+              chapterNumber: prepared.chapterNumber,
+            },
+          },
+          select: { id: true, title: true },
+        });
+        if (existing) {
+          console.log(`[Chapter] 章节已存在，跳过写入: bookId=${prepared.bookId}, chapter=${prepared.chapterNumber}, title=${existing.title}`);
+          return {
+            chapterId: existing.id,
+            bookId: prepared.bookId,
+            chapterNumber: prepared.chapterNumber,
+            title: existing.title,
+          };
+        }
+      }
+      throw error;
+    }
 
-    console.log(`[Chapter] 书籍《${prepared.bookTitle}》第 ${prepared.chapterNumber} 章发布完成`);
+    console.log(`[Chapter] 章节发布完成: bookId=${prepared.bookId}, chapter=${prepared.chapterNumber}, title=${chapterData.title}, contentLength=${chapterData.content.length}`);
 
     // 标记是否完结
     const isCompleted = prepared.chapterNumber >= prepared.bookMaxChapters;
@@ -386,13 +412,13 @@ export class ChapterWritingService {
     });
 
     if (isCompleted) {
-      console.log(`[Chapter] 书籍《${prepared.bookTitle}》已完成所有 ${prepared.bookMaxChapters} 章，标记为 COMPLETED`);
+      console.log(`[Chapter] 书籍已完成全部章节: bookId=${prepared.bookId}, maxChapters=${prepared.bookMaxChapters}`);
     }
 
     // 通知前端章节已发布
     wsEvents.chapterPublished(prepared.bookId, newChapter.chapterNumber, newChapter.title);
 
-    console.log(`[Chapter] 书籍《${prepared.bookTitle}》第 ${prepared.chapterNumber} 章创作完成`);
+    console.log(`[Chapter] 章节创作完成: bookId=${prepared.bookId}, chapter=${prepared.chapterNumber}, title=${newChapter.title}`);
     return {
       chapterId: newChapter.id,
       bookId: prepared.bookId,
@@ -405,7 +431,7 @@ export class ChapterWritingService {
    * 为单本书创作章节
    */
   async writeChapter(bookId: string, chapterNumber: number): Promise<void> {
-    console.log(`[Chapter] 开始为书籍 ${bookId} 创作第 ${chapterNumber} 章`);
+    console.log(`[Chapter] 开始创作章节: bookId=${bookId}, chapter=${chapterNumber}`);
     // 单本书写作仍保持顺序：准备 -> 生成 -> 写库
     const snapshot = await this.buildChapterSnapshotForBook(bookId, chapterNumber);
     if (!snapshot) {
@@ -427,9 +453,9 @@ export class ChapterWritingService {
    * @param bookIds - 可选，指定书籍ID列表（用于过滤）
    */
   async writeChaptersForSeason(seasonId: string, chapterNumber: number, bookIds?: string[]): Promise<void> {
-    console.log(`[Chapter] 开始为赛季 ${seasonId} 第 ${chapterNumber} 章创作`);
+    console.log(`[Chapter] 开始赛季章节创作: seasonId=${seasonId}, chapter=${chapterNumber}, filterBookIds=${bookIds?.length ?? 'all'}`);
     const snapshots = await this.buildChapterSnapshots(seasonId, chapterNumber, bookIds);
-    console.log(`[Chapter] 发现 ${snapshots.length} 本需要创作第 ${chapterNumber} 章的书籍`);
+    console.log(`[Chapter] 需要创作章节的书籍数量: seasonId=${seasonId}, chapter=${chapterNumber}, count=${snapshots.length}`);
 
     // 三段式并发：准备(读库) -> LLM生成 -> 写库
     const dbConcurrency = this.getDbConcurrency();
@@ -437,7 +463,7 @@ export class ChapterWritingService {
     const preparedJobs: PreparedChapterGeneration[] = [];
 
     // 1) 读库准备阶段
-    console.log(`[Chapter][Supabase][读] 准备阶段, 并发=${dbConcurrency}`);
+    console.log(`[Chapter][Supabase][读] 准备阶段: seasonId=${seasonId}, chapter=${chapterNumber}, concurrency=${dbConcurrency}`);
     await this.runWithConcurrency(snapshots, dbConcurrency, async (snapshot) => {
       const prepared = await this.prepareChapterGeneration(snapshot);
       if (prepared) {
@@ -447,10 +473,10 @@ export class ChapterWritingService {
 
     // 2) 模型生成阶段
     const generatedJobs: ChapterWriteJob[] = [];
-    console.log(`[Chapter][LLM] 生成阶段, 并发=${llmConcurrency}`);
+    console.log(`[Chapter][LLM] 生成阶段: seasonId=${seasonId}, chapter=${chapterNumber}, concurrency=${llmConcurrency}`);
     await this.runWithConcurrency(preparedJobs, llmConcurrency, async (prepared) => {
       const chapterData = await this.generateChapterContent(prepared).catch(error => {
-        console.error(`[Chapter] 书籍 ${prepared.bookId} 第 ${chapterNumber} 章创作失败:`, error);
+        console.error(`[Chapter] 章节生成失败: bookId=${prepared.bookId}, chapter=${chapterNumber}`, error);
         return null;
       });
       if (chapterData) {
@@ -460,10 +486,10 @@ export class ChapterWritingService {
 
     // 3) 写库阶段
     const persistedChapters: Array<{ chapterId: string; bookId: string; chapterNumber: number; title: string }> = [];
-    console.log(`[Chapter][Supabase][写] 发布阶段, 并发=${dbConcurrency}`);
+    console.log(`[Chapter][Supabase][写] 发布阶段: seasonId=${seasonId}, chapter=${chapterNumber}, concurrency=${dbConcurrency}`);
     await this.runWithConcurrency(generatedJobs, dbConcurrency, async (job) => {
       const persisted = await this.persistGeneratedChapter(job.prepared, job.chapterData).catch(error => {
-        console.error(`[Chapter] 书籍 ${job.prepared.bookId} 第 ${chapterNumber} 章发布失败:`, error);
+        console.error(`[Chapter] 章节发布失败: bookId=${job.prepared.bookId}, chapter=${chapterNumber}`, error);
         return null;
       });
       if (persisted) {
@@ -475,7 +501,7 @@ export class ChapterWritingService {
       bookId: item.bookId,
       chapterNumber: item.chapterNumber,
     })));
-    console.log(`[Chapter] 赛季 ${seasonId} 第 ${chapterNumber} 章创作完成`);
+    console.log(`[Chapter] 赛季章节创作完成: seasonId=${seasonId}, chapter=${chapterNumber}, publishedCount=${persistedChapters.length}`);
   }
 
   /**
@@ -488,7 +514,7 @@ export class ChapterWritingService {
    * 3. 带重试地补齐缺失章节 + 当前轮次章节
    */
   async catchUpBooks(seasonId: string, targetRound: number): Promise<void> {
-    console.log(`[CatchUp] 开始追赶模式 - 赛季: ${seasonId}, 目标轮次: ${targetRound}`);
+    console.log(`[CatchUp] 开始追赶模式: seasonId=${seasonId}, targetRound=${targetRound}`);
 
     // 1. 获取落后书籍（章节数 < 目标轮次）
     const allBooks = await prisma.book.findMany({
@@ -511,7 +537,7 @@ export class ChapterWritingService {
       return;
     }
 
-    console.log(`[CatchUp] 发现 ${books.length} 本需要追赶的书籍`);
+    console.log(`[CatchUp] 需要追赶的书籍数量: seasonId=${seasonId}, targetRound=${targetRound}, count=${books.length}`);
 
     const missingChaptersByBook = new Map<string, number[]>();
     const missingByRound = new Map<number, string[]>();
@@ -523,7 +549,7 @@ export class ChapterWritingService {
           missingChapters.push(i);
         }
       }
-      console.log(`[CatchUp] 书籍《${book.title}》当前 ${book._count.chapters} 章，已有章节: ${Array.from(existingChapterNumbers).sort((a, b) => a - b).join(', ')}，缺失章节: ${missingChapters.join(', ')}`);
+      console.log(`[CatchUp] 书籍缺失章节: bookId=${book.id}, currentChapters=${book._count.chapters}, existing=${Array.from(existingChapterNumbers).sort((a, b) => a - b).join(', ')}, missing=${missingChapters.join(', ')}`);
       if (missingChapters.length === 0) {
         console.log(`[CatchUp] 书籍《${book.title}》没有缺失章节需要补`);
         return;

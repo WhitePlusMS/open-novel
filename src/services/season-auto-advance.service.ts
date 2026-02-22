@@ -27,7 +27,8 @@ const CHECK_INTERVAL = 60 * 1000; // 每 60 秒检查一次
 
 function getPhaseDurationMs(season: Season, phase: RoundPhase): number {
   const roundDurationMs = (season.roundDuration || 20) * 60 * 1000;
-  const minReadingTimeMs = 5 * 60 * 1000; // 最少人类阅读时间 5 分钟
+  const minReadingMinutes = Math.max(0, Number(process.env.MIN_READING_MINUTES ?? 5));
+  const minReadingTimeMs = minReadingMinutes * 60 * 1000;
 
   // AI_WORKING 阶段：最大时间 = roundDuration - 最少人类阅读时间
   if (phase === 'AI_WORKING') {
@@ -140,7 +141,7 @@ export class SeasonAutoAdvanceService {
    */
   async checkAndAdvance(): Promise<void> {
     const checkAt = new Date().toISOString();
-    console.log(`[SeasonAutoAdvance] checkAndAdvance start: ${checkAt}`);
+    console.log(`[SeasonAutoAdvance] checkAndAdvance start: at=${checkAt}`);
     // 获取当前活跃赛季
     const season = await prisma.season.findFirst({
       where: { status: 'ACTIVE' },
@@ -160,6 +161,23 @@ export class SeasonAutoAdvanceService {
       return;
     }
 
+    if (season.roundPhase === 'AI_WORKING') {
+      const runningTask = await prisma.taskQueue.findFirst({
+        where: {
+          taskType: 'ROUND_CYCLE',
+          status: { in: ['PENDING', 'PROCESSING'] },
+          AND: [
+            { payload: { path: ['seasonId'], equals: season.id } },
+            { payload: { path: ['round'], equals: Number(season.currentRound || 1) } },
+          ],
+        },
+      });
+      if (runningTask) {
+        console.log(`[SeasonAutoAdvance] AI_WORKING 中存在任务，跳过推进: taskId=${runningTask.id}, status=${runningTask.status}, seasonId=${season.id}, round=${season.currentRound}`);
+        return;
+      }
+    }
+
       let currentPhase = (season.roundPhase as RoundPhase) || 'NONE';
       let currentRound = season.currentRound || 1;
       // phaseStartTime 保持 UTC，用于时间比较
@@ -168,7 +186,7 @@ export class SeasonAutoAdvanceService {
       const transitions: Array<{ round: number; phase: RoundPhase; startTime: Date }> = [];
 
       if (currentPhase === 'NONE') {
-        console.log('[SeasonAutoAdvance] 赛季未开始，进入第一轮 AI_WORKING');
+        console.log(`[SeasonAutoAdvance] 赛季未开始，进入第一轮 AI_WORKING: seasonId=${season.id}`);
         currentPhase = 'AI_WORKING';
         currentRound = 1;
         transitions.push({ round: currentRound, phase: currentPhase, startTime: phaseStartTime });
@@ -185,10 +203,10 @@ export class SeasonAutoAdvanceService {
         const phaseStartTimeMs = getUtcTimeMs(phaseStartTime);
         const phaseEndTimeMs = phaseStartTimeMs + durationMs;
         const timeLeft = phaseEndTimeMs - nowUtcMs;
-        console.log(`[SeasonAutoAdvance] Loop: phase=${currentPhase}, round=${currentRound}, durationMs=${durationMs}, phaseStartTimeMs=${phaseStartTimeMs}, nowUtcMs=${nowUtcMs}, timeLeft=${timeLeft}`);
+        console.log(`[SeasonAutoAdvance] Loop: seasonId=${season.id}, phase=${currentPhase}, round=${currentRound}, durationMs=${durationMs}, phaseStartTimeMs=${phaseStartTimeMs}, nowUtcMs=${nowUtcMs}, timeLeftMs=${timeLeft}`);
 
         if (timeLeft > 5000) {
-          console.log('[SeasonAutoAdvance] Time left > 5s, breaking loop');
+          console.log(`[SeasonAutoAdvance] Time left > 5s, breaking loop: seasonId=${season.id}, phase=${currentPhase}, round=${currentRound}`);
           break;
         }
 
@@ -201,14 +219,14 @@ export class SeasonAutoAdvanceService {
         // 关键修改：当 AI_WORKING 阶段结束后，如果已达最大轮次，则结束赛季
         // 而不是等到 HUMAN_READING 结束后才结束
         if (currentPhase === 'AI_WORKING' && nextRound > maxRounds) {
-          console.log(`[SeasonAutoAdvance] 第 ${currentRound} 轮 AI工作已完成，已达最大轮次（第 ${maxRounds} 轮），自动结束赛季`);
+          console.log(`[SeasonAutoAdvance] AI_WORKING 已达最大轮次，自动结束赛季: seasonId=${season.id}, round=${currentRound}, maxRounds=${maxRounds}`);
           await this.endSeason(season.id);
           return;
         }
 
         // 如果是 HUMAN_READING 阶段结束后已达最大轮次，也结束
         if (nextRound > maxRounds) {
-          console.log(`[SeasonAutoAdvance] 已达最大轮次（第 ${maxRounds} 轮），自动结束赛季`);
+          console.log(`[SeasonAutoAdvance] HUMAN_READING 已达最大轮次，自动结束赛季: seasonId=${season.id}, round=${currentRound}, maxRounds=${maxRounds}`);
           await this.endSeason(season.id);
           return;
         }
@@ -224,11 +242,14 @@ export class SeasonAutoAdvanceService {
       if (transitions.length === 0) {
         const remainingMs = getPhaseRemainingTime(season, currentPhase);
         if (remainingMs > 5000) {
-          console.log(`[SeasonAutoAdvance] 当前阶段剩余时间 > 5s，暂不推进: phase=${currentPhase}, remainingMs=${remainingMs}`);
+        console.log(`[SeasonAutoAdvance] 当前阶段剩余时间 > 5s，暂不推进: seasonId=${season.id}, phase=${currentPhase}, round=${currentRound}, remainingMs=${remainingMs}`);
           return;
         }
       }
 
+    if (transitions.length > 0) {
+      console.log(`[SeasonAutoAdvance] 本次推进步骤: seasonId=${season.id}, count=${transitions.length}, transitions=${transitions.map(t => `${t.round}:${t.phase}`).join('|')}`);
+    }
     for (const transition of transitions) {
       await this.advancePhase(season.id, transition.round, transition.phase, transition.startTime);
     }
@@ -257,13 +278,14 @@ export class SeasonAutoAdvanceService {
         },
       });
 
-      console.log(`[SeasonAutoAdvance] 已推进: 第 ${round} 轮 - ${getPhaseDisplayName(phase)}`);
+      console.log(`[SeasonAutoAdvance] 已推进: seasonId=${seasonId}, round=${round}, phase=${getPhaseDisplayName(phase)}`);
 
       // 触发相应的任务
       await this.triggerPhaseTask(seasonId, round, phase);
 
     } catch (error) {
-      console.error('[SeasonAutoAdvance] 推进失败:', error);
+      const code = (error as { code?: string }).code;
+      console.error(`[SeasonAutoAdvance] 推进失败: seasonId=${seasonId}, round=${round}, phase=${phase}, code=${code || 'unknown'}`, error);
     }
   }
 
@@ -278,11 +300,11 @@ export class SeasonAutoAdvanceService {
     console.log(`[SeasonAutoAdvance] triggerPhaseTask: seasonId=${seasonId}, round=${round}, phase=${phase}`);
 
     if (phase === 'AI_WORKING') {
-      console.log(`[SeasonAutoAdvance] 🎯 进入 AI_WORKING 阶段，创建 ROUND_CYCLE 任务 - 第 ${round} 轮`);
+      console.log(`[SeasonAutoAdvance] 🎯 进入 AI_WORKING 阶段，创建 ROUND_CYCLE 任务: seasonId=${seasonId}, round=${round}`);
 
       // 进入 AI_WORKING 阶段时，记录开始时间
       const now = new Date();
-      console.log(`[SeasonAutoAdvance] 📝 记录 aiWorkStartTime: ${now.toISOString()}`);
+      console.log(`[SeasonAutoAdvance] 📝 记录 aiWorkStartTime: seasonId=${seasonId}, at=${now.toISOString()}`);
       await prisma.season.update({
         where: { id: seasonId },
         data: {
@@ -296,11 +318,11 @@ export class SeasonAutoAdvanceService {
         payload: { seasonId, round },
         priority: 10,
       });
-      console.log(`[SeasonAutoAdvance] ✅ ROUND_CYCLE 任务已创建: ${task.id}`);
+      console.log(`[SeasonAutoAdvance] ✅ ROUND_CYCLE 任务已创建: id=${task.id}, seasonId=${seasonId}, round=${round}`);
     } else if (phase === 'HUMAN_READING') {
-      console.log(`[SeasonAutoAdvance] 📖 进入 HUMAN_READING 阶段，不需要触发任务，等待人类阅读超时后自动推进`);
+      console.log(`[SeasonAutoAdvance] 📖 进入 HUMAN_READING 阶段: seasonId=${seasonId}, round=${round}`);
     } else {
-      console.log(`[SeasonAutoAdvance] ⚠️ 未知阶段: ${phase}`);
+      console.log(`[SeasonAutoAdvance] ⚠️ 未知阶段: seasonId=${seasonId}, round=${round}, phase=${phase}`);
     }
   }
 
@@ -312,10 +334,10 @@ export class SeasonAutoAdvanceService {
     console.log(`[SeasonAutoAdvance] advanceToNextRound called: seasonId=${seasonId}, round=${round}`);
 
     const season = await prisma.season.findUnique({ where: { id: seasonId } });
-    console.log(`[SeasonAutoAdvance] 当前赛季状态: phase=${season?.roundPhase}, currentRound=${season?.currentRound}`);
+    console.log(`[SeasonAutoAdvance] 当前赛季状态: seasonId=${seasonId}, phase=${season?.roundPhase}, currentRound=${season?.currentRound}`);
 
     if (!season || season.roundPhase !== 'AI_WORKING') {
-      console.log(`[SeasonAutoAdvance] 跳过：当前阶段不是 AI_WORKING`);
+      console.log(`[SeasonAutoAdvance] 跳过：当前阶段不是 AI_WORKING: seasonId=${seasonId}, phase=${season?.roundPhase}`);
       return;
     }
 
@@ -326,7 +348,7 @@ export class SeasonAutoAdvanceService {
       : 0;
     const readingDurationMs = Math.max(roundDurationMs - aiWorkMs, 0);
 
-    console.log(`[SeasonAutoAdvance] 时间计算: roundDuration=${roundDurationMs}ms, aiWorkMs=${aiWorkMs}ms, readingDurationMs=${readingDurationMs}ms`);
+    console.log(`[SeasonAutoAdvance] 时间计算: seasonId=${seasonId}, roundDurationMs=${roundDurationMs}, aiWorkMs=${aiWorkMs}, readingDurationMs=${readingDurationMs}`);
 
     // 更新阶段为 HUMAN_READING，设置阅读开始时间
     await prisma.season.update({
@@ -338,7 +360,7 @@ export class SeasonAutoAdvanceService {
       },
     });
 
-    console.log(`[SeasonAutoAdvance] ✅ 第 ${round} 轮 AI工作完成，已切换到 HUMAN_READING 阶段（阅读时长: ${readingDurationMs / 60000}分钟）`);
+    console.log(`[SeasonAutoAdvance] ✅ AI工作完成切换 HUMAN_READING: seasonId=${seasonId}, round=${round}, readingMinutes=${readingDurationMs / 60000}`);
   }
 
   /**

@@ -51,6 +51,28 @@ export class TaskQueueService {
    * 创建新任务
    */
   async create(dto: CreateTaskDto): Promise<TaskItem> {
+    const seasonId = dto.payload.seasonId;
+    const round = dto.payload.round;
+    if (
+      seasonId &&
+      round &&
+      (dto.taskType === 'ROUND_CYCLE' || dto.taskType === 'CATCH_UP')
+    ) {
+      const existing = await prisma.taskQueue.findFirst({
+        where: {
+          taskType: dto.taskType,
+          status: { in: ['PENDING', 'PROCESSING'] },
+          AND: [
+            { payload: { path: ['seasonId'], equals: String(seasonId) } },
+            { payload: { path: ['round'], equals: Number(round) } },
+          ],
+        },
+      });
+      if (existing) {
+        console.log(`[TaskQueue] Skip duplicate task: type=${existing.taskType}, id=${existing.id}, seasonId=${seasonId}, round=${round}, status=${existing.status}`);
+        return this.formatTask(existing);
+      }
+    }
     const task = await prisma.taskQueue.create({
       data: {
         taskType: dto.taskType,
@@ -62,7 +84,7 @@ export class TaskQueueService {
       },
     });
 
-    console.log(`[TaskQueue] Created task: ${task.taskType} (${task.id})`);
+    console.log(`[TaskQueue] Created task: type=${task.taskType}, id=${task.id}, seasonId=${seasonId ?? 'unknown'}, round=${round ?? 'unknown'}, priority=${task.priority}`);
     return this.formatTask(task);
   }
 
@@ -74,6 +96,7 @@ export class TaskQueueService {
     lockDurationMs: number = 5 * 60 * 1000
   ): Promise<TaskItem | null> {
     const nowDate = now();
+    const staleBefore = new Date(nowDate.getTime() - lockDurationMs);
 
     // 查找状态为 PENDING 或 PROCESSING 但已超时的任务
     const task = await client.taskQueue.findFirst({
@@ -83,7 +106,7 @@ export class TaskQueueService {
           {
             status: 'PROCESSING',
             startedAt: {
-              lt: new Date(nowDate.getTime() - lockDurationMs),
+              lt: staleBefore,
             },
           },
         ],
@@ -100,14 +123,21 @@ export class TaskQueueService {
     }
 
     // 标记为处理中
-    await client.taskQueue.update({
-      where: { id: task.id },
+    const updateResult = await client.taskQueue.updateMany({
+      where: {
+        id: task.id,
+        status: task.status,
+        ...(task.status === 'PROCESSING' ? { startedAt: { lt: staleBefore } } : {}),
+      },
       data: {
         status: 'PROCESSING',
         startedAt: nowDate,
         attempts: { increment: 1 },
       },
     });
+    if (updateResult.count === 0) {
+      return null;
+    }
 
     return this.formatTask(task);
   }
@@ -123,7 +153,7 @@ export class TaskQueueService {
         completedAt: now(),
       },
     });
-    console.log(`[TaskQueue] Task completed: ${taskId}`);
+    console.log(`[TaskQueue] Task completed: id=${taskId}`);
   }
 
   /**
@@ -143,7 +173,7 @@ export class TaskQueueService {
           startedAt: null,
         },
       });
-      console.log(`[TaskQueue] Task failed, will retry: ${taskId} (attempt ${task.attempts}/${task.maxAttempts})`);
+      console.log(`[TaskQueue] Task failed, will retry: id=${taskId}, attempt=${task.attempts}/${task.maxAttempts}`);
     } else {
       await prisma.taskQueue.update({
         where: { id: taskId },
@@ -153,7 +183,7 @@ export class TaskQueueService {
           completedAt: now(),
         },
       });
-      console.error(`[TaskQueue] Task failed permanently: ${taskId}`, errorMessage);
+      console.error(`[TaskQueue] Task failed permanently: id=${taskId}`, errorMessage);
     }
   }
 
