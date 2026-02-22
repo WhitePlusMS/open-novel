@@ -54,15 +54,23 @@ export default async function HomePage() {
         limit: 20,
         seasonId: season.id,
       });
+      const { books: completedBooks } = await bookService.getBooks({
+        status: 'COMPLETED',
+        limit: 20,
+        seasonId: season.id,
+      });
       const { books: draftBooks } = await bookService.getBooks({
         status: 'DRAFT',
         limit: 20,
         seasonId: season.id,
       });
-      const mergedBooks = [
-        ...activeBooks,
-        ...draftBooks.filter((draft) => !activeBooks.some((active) => active.id === draft.id)),
-      ];
+      const mergedBooks: typeof activeBooks = [];
+      const mergedBookIds = new Set<string>();
+      for (const book of [...activeBooks, ...completedBooks, ...draftBooks]) {
+        if (mergedBookIds.has(book.id)) continue;
+        mergedBookIds.add(book.id);
+        mergedBooks.push(book);
+      }
       // 使用 Book 的合并字段 heatValue 进行排序
       const rawBooks = mergedBooks.sort((a, b) => (b.heatValue ?? 0) - (a.heatValue ?? 0));
 

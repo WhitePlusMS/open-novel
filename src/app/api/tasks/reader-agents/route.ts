@@ -101,8 +101,29 @@ async function runReaderTask() {
   }
 }
 
-export async function POST() {
+function triggerReaderTask(runAsync: boolean) {
+  if (runAsync) {
+    setImmediate(async () => {
+      try {
+        await runReaderTask();
+      } catch (error) {
+        console.error('[ReaderTask] 后台调度失败:', error);
+      }
+    });
+    return NextResponse.json({
+      code: 0,
+      data: { message: '任务已触发，将在后台异步执行' },
+      message: 'triggered',
+    });
+  }
+
   return runReaderTask();
+}
+
+export async function POST(request: Request) {
+  const url = new URL(request.url);
+  const runAsync = url.searchParams.get('sync') !== '1';
+  return triggerReaderTask(runAsync);
 }
 
 /**
@@ -112,7 +133,8 @@ export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
     if (url.searchParams.get('run') === '1') {
-      return runReaderTask();
+      const runAsync = url.searchParams.get('sync') !== '1';
+      return triggerReaderTask(runAsync);
     }
 
     // 获取活跃赛季

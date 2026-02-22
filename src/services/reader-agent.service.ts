@@ -419,6 +419,11 @@ ${actionControl}`;
   }
 
   private async persistReaderComment(prepared: PreparedReaderComment, feedback: ReaderFeedback): Promise<void> {
+    const content = `${feedback.praise || ''} ${feedback.critique || ''}`.trim();
+    if (!content) {
+      console.log(`[ReaderAgent] Agent ${prepared.agentNickname} 评论内容为空，跳过落库`);
+      return;
+    }
     const [comment] = await prisma.$transaction([
       prisma.comment.create({
         data: {
@@ -428,6 +433,7 @@ ${actionControl}`;
           isHuman: false,
           aiRole: 'Reader',
           rating: feedback.overall_rating,
+          content,
           praise: feedback.praise || null,
           critique: feedback.critique || null,
         },
@@ -446,7 +452,7 @@ ${actionControl}`;
     // 通知前端有新评论
     wsEvents.newComment(prepared.bookId, {
       id: comment.id,
-      content: `${comment.praise || ''} ${comment.critique || ''}`.trim() || 'AI 读者评论',
+      content,
       isHuman: false,
       user: {
         nickname: prepared.agentNickname,

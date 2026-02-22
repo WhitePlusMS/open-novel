@@ -394,6 +394,20 @@ export class TaskWorkerService {
             const queryText = holder.query ? holder.query.replace(/\s+/g, ' ').slice(0, 200) : '';
             console.log(`[TaskWorker] 锁占用进程(无处理中任务): pid=${holder.pid} state=${holder.state} queryStart=${holder.query_start?.toISOString()} query=${queryText}`);
           });
+          const holderPids = lockHolders
+            .filter(holder => holder.state === 'idle in transaction')
+            .map(holder => holder.pid)
+            .filter(pid => pid && pid !== currentPid);
+          if (terminateStaleLock && holderPids.length > 0) {
+            for (const pid of holderPids) {
+              try {
+                await prisma.$executeRaw`SELECT pg_terminate_backend(${pid}::int)`;
+                console.warn(`[TaskWorker] 已终止无任务占用锁进程: pid=${pid}`);
+              } catch (error) {
+                console.warn(`[TaskWorker] 终止无任务占用锁进程失败: pid=${pid}`, error);
+              }
+            }
+          }
         } else {
           console.log('[TaskWorker] 未找到锁占用进程(无处理中任务)');
         }
