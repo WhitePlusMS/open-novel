@@ -125,7 +125,7 @@ export class OutlineGenerationService {
 
   private getLlmConcurrency(): number {
     const raw = Number(process.env.LLM_CONCURRENCY || process.env.AI_CONCURRENCY);
-    const fallback = process.env.NODE_ENV === 'production' ? 2 : 3;
+    const fallback = process.env.NODE_ENV === 'production' ? 4 : 6;
     if (Number.isFinite(raw) && raw > 0) return Math.floor(raw);
     return fallback;
   }
