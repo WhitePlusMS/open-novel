@@ -88,8 +88,8 @@ export class ChapterWritingService {
   // 数据库并发：控制 Prisma 读写数量，避免连接池耗尽
   private getDbConcurrency(): number {
     const raw = Number(process.env.DB_CONCURRENCY || process.env.TASK_CONCURRENCY);
-    const fallback = process.env.NODE_ENV === 'production' ? 1 : 2;
-    if (Number.isFinite(raw) && raw > 0) return Math.floor(raw);
+    const fallback = 3;
+    if (Number.isFinite(raw) && raw > 0) return Math.min(3, Math.floor(raw));
     return fallback;
   }
 

@@ -32,7 +32,9 @@ async function runAndCleanup() {
 
 export async function POST(request: Request) {
   const url = new URL(request.url);
-  const runAsync = url.searchParams.get('sync') !== '1';
+  const syncParam = url.searchParams.get('sync');
+  const forceSyncOnVercel = process.env.VERCEL === '1' && syncParam === null;
+  const runAsync = forceSyncOnVercel ? false : syncParam !== '1';
   const nowMs = Date.now();
   console.log(`[ProcessTasks] 触发请求: now=${new Date(nowMs).toISOString()}, minIntervalMs=${minIntervalMs}, isRunning=${Boolean(globalState.__processTasksRunning)}, lastRun=${globalState.__processTasksLastRun ? new Date(globalState.__processTasksLastRun).toISOString() : 'none'}`);
   if (globalState.__processTasksRunning) {

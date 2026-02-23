@@ -64,8 +64,8 @@ export class ReaderAgentService {
   // DB 并发：控制读写库并发，防止连接池耗尽
   private getDbConcurrency(): number {
     const raw = Number(process.env.DB_CONCURRENCY || process.env.TASK_CONCURRENCY);
-    const fallback = process.env.NODE_ENV === 'production' ? 1 : 2;
-    if (Number.isFinite(raw) && raw > 0) return Math.floor(raw);
+    const fallback = 3;
+    if (Number.isFinite(raw) && raw > 0) return Math.min(3, Math.floor(raw));
     return fallback;
   }
 

@@ -122,7 +122,9 @@ function triggerReaderTask(runAsync: boolean) {
 
 export async function POST(request: Request) {
   const url = new URL(request.url);
-  const runAsync = url.searchParams.get('sync') !== '1';
+  const syncParam = url.searchParams.get('sync');
+  const forceSyncOnVercel = process.env.VERCEL === '1' && syncParam === null;
+  const runAsync = forceSyncOnVercel ? false : syncParam !== '1';
   return triggerReaderTask(runAsync);
 }
 
@@ -133,7 +135,9 @@ export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
     if (url.searchParams.get('run') === '1') {
-      const runAsync = url.searchParams.get('sync') !== '1';
+      const syncParam = url.searchParams.get('sync');
+      const forceSyncOnVercel = process.env.VERCEL === '1' && syncParam === null;
+      const runAsync = forceSyncOnVercel ? false : syncParam !== '1';
       return triggerReaderTask(runAsync);
     }
 
