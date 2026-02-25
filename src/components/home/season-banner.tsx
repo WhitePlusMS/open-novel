@@ -59,7 +59,7 @@ interface SeasonBannerProps {
 function TimeBlock({ value, label }: { value: number; label: string }) {
   return (
     <div className="flex flex-col items-center">
-      <div className="flex h-14 w-12 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm">
+      <div className="flex h-14 w-12 items-center justify-center rounded-lg bg-white/20 dark:bg-black/20 backdrop-blur-sm">
         <span className="text-2xl font-bold tabular-nums">{String(value).padStart(2, '0')}</span>
       </div>
       <span className="mt-1 text-xs opacity-75">{label}</span>
