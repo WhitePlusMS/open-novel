@@ -7,24 +7,10 @@ import { SeasonBanner } from '@/components/home/season-banner';
 import { BookList, type Book } from '@/components/home/book-list';
 import { ZoneTabs } from '@/components/home/zone-tabs';
 import { Button } from '@/components/ui/button';
-import { Spinner } from '@/components/ui/spinner';
 import { Skeleton, SkeletonCard } from '@/components/ui/skeleton';
 import { Alert } from '@/components/ui/alert';
-import { UserPlus, Sparkles, Settings, Zap, ArrowRight, BookOpen, RefreshCw } from 'lucide-react';
+import { UserPlus, Sparkles, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-/**
- * 获取阶段显示名称
- */
-function getPhaseDisplayName(phase: string): string {
-  const names: Record<string, string> = {
-    NONE: '准备中',
-    READING: '阅读窗口期',
-    OUTLINE: '大纲生成期',
-    WRITING: '章节创作期',
-  };
-  return names[phase] || phase;
-}
 
 interface Season {
   id: string;
@@ -108,13 +94,6 @@ export function HomeContent({
 }: HomeContentProps) {
   const { user, isLoading, error, login, clearError } = useAuth();
   const router = useRouter();
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [actionType, setActionType] = useState<'init' | 'start' | 'nextPhase' | 'endSeason' | null>(null);
-  const [phaseStatus, setPhaseStatus] = useState<{
-    currentRound: number;
-    currentPhase: string;
-    phaseDisplayName: string;
-  } | null>(null);
   const [currentZone, setCurrentZone] = useState('');
   // 客户端状态保存书籍数据，避免切换分区时数据丢失
   const [clientBooks, setClientBooks] = useState<Book[]>([]);
@@ -157,42 +136,6 @@ export function HomeContent({
     }
   }, [books]);
 
-  // 优化：直接从 props 中的 season 数据获取阶段状态，避免重复 API 调用
-  // season props 已经包含 currentRound 和 currentPhase
-  useEffect(() => {
-    if (season && user) {
-      const roundPhase = season.currentPhase || 'NONE';
-      const phaseDisplayName = getPhaseDisplayName(roundPhase);
-      setPhaseStatus({
-        currentRound: season.currentRound || 1,
-        currentPhase: roundPhase,
-        phaseDisplayName,
-      });
-    }
-  }, [season, user]);
-
-  // 获取 S0 赛季状态 - 注意：这个调用没有使用结果，是无用的，可以注释掉或删除
-  // 如果需要 S0 检测，应该在服务端判断后通过 props 传递
-  /*
-  useEffect(() => {
-    const fetchS0Status = async () => {
-      try {
-        const response = await fetch('/api/seasons/status');
-        const result = await response.json();
-        if (result.code === 0 && result.data) {
-          // S0 赛季检测：seasonNumber 为 0
-        }
-      } catch (err) {
-        console.error('Failed to fetch S0 status:', err);
-      }
-    };
-
-    if (user) {
-      fetchS0Status();
-    }
-  }, [user]);
-  */
-
   useEffect(() => {
     if (error) {
       const url = new URL(window.location.href);
@@ -202,110 +145,6 @@ export function HomeContent({
       }
     }
   }, [error]);
-
-  // 初始化 S0 赛季
-  const handleInitS0 = async () => {
-    setIsProcessing(true);
-    setActionType('init');
-    try {
-      const response = await fetch('/api/admin/test/init-s0', {
-        method: 'POST',
-      });
-      const result = await response.json();
-      if (result.code === 0) {
-        router.refresh();
-        alert(`初始化成功！${result.data.agentsCreated} 个 Agent 已就绪`);
-      } else {
-        alert('初始化失败: ' + result.message);
-      }
-    } catch (err) {
-      alert('初始化失败: ' + (err as Error).message);
-    } finally {
-      setIsProcessing(false);
-      setActionType(null);
-    }
-  };
-
-  // 开始 S0 赛季
-  const handleStartS0 = async () => {
-    setIsProcessing(true);
-    setActionType('start');
-    try {
-      const response = await fetch('/api/admin/test/start-s0', {
-        method: 'POST',
-      });
-      const result = await response.json();
-      if (result.code === 0) {
-        router.refresh();
-        alert(`赛季开始！${result.data.joinCount} 个 Agent 参赛，${result.data.skipCount} 个弃权`);
-      } else {
-        alert('开始失败: ' + result.message);
-      }
-    } catch (err) {
-      alert('开始失败: ' + (err as Error).message);
-    } finally {
-      setIsProcessing(false);
-      setActionType(null);
-    }
-  };
-
-  // 推进赛季阶段
-  const handleNextPhase = async () => {
-    setIsProcessing(true);
-    setActionType('nextPhase');
-    try {
-      const response = await fetch('/api/admin/test/next-phase', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'NEXT_PHASE' }),
-      });
-      const result = await response.json();
-      if (result.code === 0) {
-        // 更新本地状态
-        if (result.data) {
-          setPhaseStatus({
-            currentRound: result.data.currentRound,
-            currentPhase: result.data.currentPhase,
-            phaseDisplayName: result.data.phaseDisplayName,
-          });
-        }
-        alert(`推进成功！当前: 第 ${result.data?.currentRound} 轮 - ${result.data?.phaseDisplayName}`);
-      } else {
-        alert('推进失败: ' + result.message);
-      }
-    } catch (err) {
-      alert('推进失败: ' + (err as Error).message);
-    } finally {
-      setIsProcessing(false);
-      setActionType(null);
-    }
-  };
-
-  // 结束赛季
-  const handleEndSeason = async () => {
-    if (!confirm('确定要结束当前赛季吗？')) return;
-    setIsProcessing(true);
-    setActionType('endSeason');
-    try {
-      const response = await fetch('/api/admin/test/next-phase', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'END_SEASON' }),
-      });
-      const result = await response.json();
-      if (result.code === 0) {
-        router.refresh();
-        alert('赛季已结束！');
-      } else {
-        alert('结束失败: ' + result.message);
-      }
-    } catch (err) {
-      alert('结束失败: ' + (err as Error).message);
-    } finally {
-      setIsProcessing(false);
-      setActionType(null);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -350,13 +189,10 @@ export function HomeContent({
 
   // 已登录时显示完整首页
   if (user) {
-    // S0 赛季判断：seasonNumber 为 0
-    const seasonNum = season?.seasonNumber;
-    const isS0Season = seasonNum == 0 || String(seasonNum) === '0';
     const hasRealBooks = realParticipantCount > 0 || (books && books.length > 0);
 
     // 判断是否显示已完成赛季的历史榜单
-    const showHistorySeasons = !season || (season && !isS0Season && !hasRealBooks);
+    const showHistorySeasons = !season || (season && !hasRealBooks);
     const hasFinishedSeasons = seasonsWithBooks && seasonsWithBooks.length > 0;
 
     return (
@@ -411,137 +247,6 @@ export function HomeContent({
                 <BookList initialBooks={seasonData.books} showSeason={false} zone={currentZone} />
               </div>
             ))}
-          </div>
-        )}
-
-        {/* S0 测试赛季操作区域 */}
-        {isS0Season && hasRealBooks && (
-          <div className="my-4 p-6 bg-gradient-to-br from-amber-50 to-orange-100 dark:from-amber-900/20 dark:to-orange-800/10 rounded-lg border border-amber-200 dark:border-amber-800">
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-900/50 mb-3">
-                <Settings className="w-8 h-8 text-amber-600" />
-              </div>
-              <h3 className="text-lg font-bold text-amber-900 dark:text-amber-100 mb-2">
-                S0 测试赛季
-              </h3>
-
-              <p className="text-sm text-amber-700 dark:text-amber-300 mb-4">
-                已参赛 {realParticipantCount} 本书
-              </p>
-
-              {/* 阶段推进按钮 - 第一章完成后显示 */}
-              {phaseStatus && (
-                <div className="mb-4 p-4 bg-white/50 dark:bg-amber-900/20 rounded-lg">
-                  <div className="text-sm text-amber-800 dark:text-amber-200 mb-3">
-                    <div className="font-semibold">当前阶段状态</div>
-                    <div className="mt-1">
-                      第 <span className="font-bold">{phaseStatus.currentRound}</span> 轮 - <span className="font-bold">{phaseStatus.phaseDisplayName}</span>
-                    </div>
-                  </div>
-
-                  {/* 推进到下一阶段 */}
-                  <Button
-                    onClick={handleNextPhase}
-                    disabled={isProcessing}
-                    size="lg"
-                    className="gap-2 bg-blue-600 hover:bg-blue-700 w-full mb-2"
-                  >
-                    {isProcessing && actionType === 'nextPhase' ? (
-                      <>
-                        <Spinner className="w-4 h-4" />
-                        推进中...
-                      </>
-                    ) : (
-                      <>
-                        <ArrowRight className="w-4 h-4" />
-                        推进到下一阶段
-                      </>
-                    )}
-                  </Button>
-
-                  {/* 结束赛季按钮 */}
-                  <Button
-                    onClick={handleEndSeason}
-                    disabled={isProcessing}
-                    size="lg"
-                    variant="outline"
-                    className="gap-2 border-red-400 text-red-600 hover:bg-red-50 w-full"
-                  >
-                    {isProcessing && actionType === 'endSeason' ? (
-                      <>
-                        <Spinner className="w-4 h-4" />
-                        结束中...
-                      </>
-                    ) : (
-                      <>
-                        <BookOpen className="w-4 h-4" />
-                        结束赛季
-                      </>
-                    )}
-                  </Button>
-                </div>
-              )}
-
-              {/* 重置按钮 */}
-              <Button
-                onClick={handleInitS0}
-                disabled={isProcessing}
-                size="lg"
-                variant="outline"
-                className="gap-2 border-amber-400 text-amber-700 hover:bg-amber-100"
-              >
-                {isProcessing && actionType === 'init' ? (
-                  <>
-                    <Spinner className="w-4 h-4" />
-                    重置中...
-                  </>
-                ) : (
-                  <>
-                    <Settings className="w-4 h-4" />
-                    重置 S0 赛季
-                  </>
-                )}
-              </Button>
-              <p className="mt-3 text-xs text-amber-600 dark:text-amber-400">
-                重置后将清空当前赛季，重新开始
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* S0 测试赛季 - 还没有书籍时 */}
-        {isS0Season && !hasRealBooks && (
-          <div className="my-4 p-6 bg-gradient-to-br from-amber-50 to-orange-100 dark:from-amber-900/20 dark:to-orange-800/10 rounded-lg border border-amber-200 dark:border-amber-800">
-            <div className="text-center">
-              <Settings className="w-12 h-12 mx-auto mb-3 text-amber-600" />
-              <h3 className="text-lg font-bold text-amber-900 dark:text-amber-100 mb-2">
-                S0 测试赛季
-              </h3>
-              <p className="text-sm text-amber-700 dark:text-amber-300 mb-4">
-                Agent 已就绪，点击开始发送参赛邀请
-              </p>
-              <Button
-                onClick={handleStartS0}
-                disabled={isProcessing}
-                size="lg"
-                className="gap-2 bg-orange-600 hover:bg-orange-700"
-              >
-                {isProcessing && actionType === 'start' ? (
-                  <>
-                    <Spinner className="w-4 h-4" />
-                    发送邀请中...
-                  </>
-                ) : (
-                  <>
-                    <Zap className="w-4 h-4" />
-                    开始 S0 赛季
-                  </>
-                )}
-              </Button>
-              <p className="mt-3 text-xs text-amber-600 dark:text-amber-400">
-                点击后将发送赛季邀请，Agent 将自主决策是否参赛
-              </p>
-            </div>
           </div>
         )}
 

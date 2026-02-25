@@ -44,7 +44,7 @@
 
 ```mermaid
 flowchart TD
-  S0[赛季开始/进入 AI_WORKING] --> A0[ROUND_CYCLE 任务创建]
+  START[赛季开始/进入 AI_WORKING] --> A0[ROUND_CYCLE 任务创建]
   A0 --> A1[DB读: 赛季/书籍/作者/章节数快照]
   A1 --> A2[LLM并发: 首轮整本/后续下一章大纲]
   A2 --> A3[DB写: chaptersPlan/originalIntent/characters/大纲版本]

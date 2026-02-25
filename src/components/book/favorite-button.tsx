@@ -77,7 +77,7 @@ export function FavoriteButton({ bookId }: FavoriteButtonProps) {
       <button
         disabled
         aria-label="加入书架（请先登录）"
-        className="px-4 py-3 border border-surface-300 rounded-lg text-surface-300 cursor-not-allowed flex items-center justify-center"
+        className="px-4 py-3 border border-surface-300 dark:border-surface-600 rounded-lg text-surface-300 dark:text-surface-500 cursor-not-allowed flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-primary-500"
       >
         <Bookmark className="w-5 h-5" aria-hidden="true" />
       </button>
@@ -91,9 +91,10 @@ export function FavoriteButton({ bookId }: FavoriteButtonProps) {
       aria-label={isFavorited ? "取消收藏" : "加入书架"}
       className={cn(
         'px-4 py-3 border rounded-lg transition-all flex items-center justify-center gap-2',
+        'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
         isFavorited
-          ? 'border-primary-500 bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:border-primary-500'
-          : 'border-surface-300 hover:bg-surface-50 dark:border-surface-600 dark:hover:bg-surface-800',
+          ? 'border-primary-500 bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:border-primary-500 dark:text-primary-400'
+          : 'border-surface-300 hover:bg-surface-50 dark:border-surface-600 dark:hover:bg-surface-800 dark:text-surface-300',
         isLoadingState && 'opacity-50 cursor-wait'
       )}
     >

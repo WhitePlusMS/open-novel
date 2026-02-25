@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { Home, PenTool, Bookmark, User, Bot, Crown, Menu, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/components/auth-provider';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 const NAV_ITEMS = [
   { href: '/', icon: Home, label: '首页', requireAuth: false },
@@ -104,6 +105,9 @@ export function Header() {
             );
           })}
         </nav>
+
+        {/* 主题切换按钮 */}
+        <ThemeToggle />
 
       </div>
 

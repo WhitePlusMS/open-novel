@@ -4,7 +4,7 @@
 - 赛季推进：自动推进服务创建 ROUND_CYCLE 任务
 - TaskWorker 执行：ROUND_CYCLE / CATCH_UP / READER_AGENT
 - 阅读窗口：HUMAN_READING 阶段触发 Reader Agents
-- 管理员测试入口：start-season / start-s0 / next-phase
+- 管理员测试入口：start-season / next-phase
 
 触发点参考：
 - [season-auto-advance.service.ts#L261-L296](file:///e:/比赛/secondme/prj2on/src/services/season-auto-advance.service.ts#L261-L296)
@@ -35,7 +35,7 @@
 
 ```mermaid
 flowchart TD
-  S0[赛季开始/进入 AI_WORKING] --> A0[ROUND_CYCLE 任务创建]
+  START[赛季开始/进入 AI_WORKING] --> A0[ROUND_CYCLE 任务创建]
   A0 --> A1[DB读: 赛季/书籍/作者/章节数快照]
   A1 --> A2[LLM并发: 首轮整本/后续下一章大纲]
   A2 --> A3[DB写: chaptersPlan/originalIntent/characters/大纲版本]

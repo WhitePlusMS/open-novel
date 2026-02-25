@@ -414,7 +414,6 @@ const createSeasonData = {
 | 序号 | 文件路径 | 修改内容 |
 |------|----------|----------|
 | 13 | `scripts/create-test-season.ts` | 可选，更新测试脚本使用新配置 |
-| 14 | `src/app/api/admin/test/init-s0/route.ts` | 可选，更新初始化 S0 脚本 |
 
 ---
 
@@ -859,7 +858,6 @@ CATCH_UP: async (payload) => {
    - `src/app/api/admin/test/next-phase/route.ts`：
      - 修改 `getPhaseDescription` 函数使用 roundDuration
      - 修改阶段说明使用 roundDuration
-   - `src/app/api/admin/test/init-s0/route.ts`：将 duration 改为 roundDuration
    - `src/app/api/admin/test/start-season/route.ts`：将 duration 改为 roundDuration
    - `scripts/create-test-season.ts`：将 duration 改为 roundDuration
 

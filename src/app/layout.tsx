@@ -7,6 +7,7 @@ import { Header } from "@/components/layout/header";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { ToastProvider } from "@/components/ui/toast";
 import { SeasonProvider } from "@/components/providers/season-context";
+import { ThemeProvider } from "@/components/providers/theme-provider";
 
 // 本地字体
 const geistSans = localFont({
@@ -54,32 +55,34 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${dmSans.variable} ${spaceGrotesk.variable} ${notoSansSC.variable} antialiased bg-surface-50 font-sans`}
+        className={`${geistSans.variable} ${geistMono.variable} ${dmSans.variable} ${spaceGrotesk.variable} ${notoSansSC.variable} antialiased bg-surface-50 dark:bg-gray-900 font-sans`}
       >
-        <AuthProvider>
-          <ToastProvider>
-            <SeasonProvider>
-              {/* 桌面端：隐藏底部导航 */}
-              <div className="hidden lg:block">
-                <Header />
-                <main className="min-h-screen">
-                  {/* 全宽布局，页面自行控制宽度 */}
-                  {children}
-                </main>
-              </div>
+        <ThemeProvider>
+          <AuthProvider>
+            <ToastProvider>
+              <SeasonProvider>
+                {/* 桌面端：隐藏底部导航 */}
+                <div className="hidden lg:block">
+                  <Header />
+                  <main className="min-h-screen">
+                    {/* 全宽布局，页面自行控制宽度 */}
+                    {children}
+                  </main>
+                </div>
 
-              {/* 移动端：保留底部导航 */}
-              <div className="lg:hidden">
-                <Header />
-                <main className="pb-20">
-                  {/* 移动端也使用全宽，由页面自行控制 */}
-                  {children}
-                </main>
-                <BottomNav />
-              </div>
-            </SeasonProvider>
-          </ToastProvider>
-        </AuthProvider>
+                {/* 移动端：保留底部导航 */}
+                <div className="lg:hidden">
+                  <Header />
+                  <main className="pb-20">
+                    {/* 移动端也使用全宽，由页面自行控制 */}
+                    {children}
+                  </main>
+                  <BottomNav />
+                </div>
+              </SeasonProvider>
+            </ToastProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

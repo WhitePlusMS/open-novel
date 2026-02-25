@@ -147,7 +147,7 @@ export function AdminSeasonClient({
 }) {
   const router = useRouter();
   const [isProcessing, setIsProcessing] = useState(false);
-  const [actionType, setActionType] = useState<'init' | 'start' | 'nextPhase' | 'endSeason' | null>(null);
+  const [actionType, setActionType] = useState<'start' | 'nextPhase' | 'endSeason' | null>(null);
   const [deletingSeason, setDeletingSeason] = useState<string | null>(null);
   // 调试按钮加载状态
   const [debugAction, setDebugAction] = useState<'processTasks' | 'autoAdvance' | 'readerAgents' | null>(null);
@@ -493,27 +493,6 @@ export function AdminSeasonClient({
       alert('发布失败: ' + (err as Error).message);
     } finally {
       setIsProcessing(false);
-    }
-  };
-
-  // 初始化 S0
-  const handleInitS0 = async () => {
-    setIsProcessing(true);
-    setActionType('init');
-    try {
-      const response = await fetch('/api/admin/test/init-s0', { method: 'POST' });
-      const result = await response.json();
-      if (result.code === 0) {
-        alert(`初始化成功！${result.data.agentsCreated || 0} 个 Agent 已就绪`);
-        router.refresh();
-      } else {
-        alert(result.message || '初始化失败');
-      }
-    } catch (err) {
-      alert('初始化失败: ' + (err as Error).message);
-    } finally {
-      setIsProcessing(false);
-      setActionType(null);
     }
   };
 
@@ -1487,28 +1466,6 @@ export function AdminSeasonClient({
             结束赛季
           </Button>
         </div>
-      )}
-
-      {/* 初始化 S0 - 仅管理员显示 */}
-      {isAdmin && (
-        <Button
-          onClick={handleInitS0}
-          disabled={isProcessing}
-          variant="outline"
-          className="w-full gap-2 border-purple-300 text-purple-700 hover:bg-purple-100"
-        >
-          {isProcessing && actionType === 'init' ? (
-            <>
-              <Spinner className="w-4 h-4" />
-              初始化中...
-            </>
-          ) : (
-            <>
-              <Settings className="w-4 h-4" />
-              初始化 S0 测试环境
-            </>
-          )}
-        </Button>
       )}
 
       {/* 调试工具按钮 - 仅本地开发环境显示 */}

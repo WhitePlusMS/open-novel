@@ -71,7 +71,7 @@ export function ShareButton({ bookId, bookTitle }: ShareButtonProps) {
           console.log('[ShareButton] Button clicked, setting isOpen to true');
           setIsOpen(true);
         }}
-        className="flex items-center gap-1.5 px-3 py-1.5 text-gray-600 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
+        className="flex items-center gap-1.5 px-3 py-1.5 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 rounded-full transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary-500"
         aria-label="分享书籍"
       >
         <Share2 className="w-4 h-4" aria-hidden="true" />
@@ -91,8 +91,8 @@ export function ShareButton({ bookId, bookTitle }: ShareButtonProps) {
         >
           <div className="space-y-6">
             {/* 书籍信息 */}
-            <div className="text-center pb-4 border-b border-gray-100">
-              <p className="text-gray-600 text-sm">分享「{bookTitle}」给朋友</p>
+            <div className="text-center pb-4 border-b border-gray-100 dark:border-gray-700">
+              <p className="text-gray-600 dark:text-gray-300 text-sm">分享「{bookTitle}」给朋友</p>
             </div>
 
             {/* 分享选项 */}
@@ -102,40 +102,40 @@ export function ShareButton({ bookId, bookTitle }: ShareButtonProps) {
                 <button
                   key={option.id}
                   onClick={() => handleSocialShare(option.name)}
-                  className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-gray-50 transition-colors"
+                  className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
                 >
                   <div className={cn('w-12 h-12 rounded-full flex items-center justify-center', option.color)}>
-                    <option.icon className="w-6 h-6 text-white" />
+                    <option.icon className="w-6 h-6 text-white" aria-hidden="true" />
                   </div>
-                  <span className="text-xs text-gray-600">{option.name}</span>
+                  <span className="text-xs text-gray-600 dark:text-gray-400">{option.name}</span>
                 </button>
               ))}
 
               {/* 复制链接 */}
               <button
                 onClick={handleCopyLink}
-                className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-gray-50 transition-colors"
+                className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <div className={cn(
                   'w-12 h-12 rounded-full flex items-center justify-center',
-                  isCopied ? 'bg-green-500' : 'bg-gray-600'
+                  isCopied ? 'bg-green-500' : 'bg-gray-600 dark:bg-gray-500'
                 )}>
                   {isCopied ? (
-                    <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   ) : (
-                    <Link2 className="w-6 h-6 text-white" />
+                    <Link2 className="w-6 h-6 text-white" aria-hidden="true" />
                   )}
                 </div>
-                <span className="text-xs text-gray-600">{isCopied ? '已复制' : '复制链接'}</span>
+                <span className="text-xs text-gray-600 dark:text-gray-400">{isCopied ? '已复制' : '复制链接'}</span>
               </button>
             </div>
 
             {/* 链接预览 */}
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-xs text-gray-500 mb-1">分享链接</p>
-              <p className="text-sm text-gray-700 truncate">{shareUrl}</p>
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">分享链接</p>
+              <p className="text-sm text-gray-700 dark:text-gray-300 truncate">{shareUrl}</p>
             </div>
 
             {/* 关闭按钮 */}
@@ -144,7 +144,7 @@ export function ShareButton({ bookId, bookTitle }: ShareButtonProps) {
                 console.log('[ShareButton] Cancel button clicked');
                 setIsOpen(false);
               }}
-              className="w-full py-3 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              className="w-full py-3 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               取消
             </button>
@@ -154,3 +154,4 @@ export function ShareButton({ bookId, bookTitle }: ShareButtonProps) {
     </>
   );
 }
+
