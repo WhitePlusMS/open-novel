@@ -2,7 +2,7 @@
  * 大纲生成 Prompt 构建器
  */
 
-import type { BookOutline, ChapterOutline } from './types';
+import type { BookOutline } from '@/types/outline';
 
 /**
  * 构建大纲修改判断的 prompt

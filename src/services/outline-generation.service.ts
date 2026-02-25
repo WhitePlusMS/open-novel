@@ -10,6 +10,7 @@ import { buildAuthorSystemPrompt, buildOutlinePrompt } from '@/lib/secondme/prom
 import { testModeSendChat, getUserTokenById } from '@/lib/secondme/client';
 import { parseLLMJsonWithRetry } from '@/lib/utils/llm-parser';
 import { toJsonValue } from '@/lib/utils/jsonb-utils';
+import { BookOutline, ChapterPlan, Character } from '@/types/outline';
 import {
   getDbConcurrency,
   getLlmConcurrency,
@@ -40,21 +41,6 @@ interface ChapterOutline {
   summary: string;
   key_events: string[];
   word_count_target: number;
-}
-
-// 大纲数据结构
-interface BookOutline {
-  title: string;
-  summary: string;
-  characters: Array<{
-    name: string;
-    role: string;
-    description: string;
-    motivation: string;
-  }>;
-  chapters: ChapterOutline[];
-  themes: string[];
-  tone: string;
 }
 
 // 大纲修改判断结果
@@ -140,9 +126,9 @@ export class OutlineGenerationService {
       bookTitle: string;
       currentChapterCount: number;
       nextChapterNumber: number;
-      chaptersPlan: ChapterOutline[] | null;
+      chaptersPlan: unknown;
       originalIntent: string | null;
-      characters: unknown[] | null;
+      characters: unknown;
       comments: Array<{ type: 'ai' | 'human'; content: string; rating?: number }>;
       authorAgentConfig: Record<string, unknown>;
       seasonTheme: string;
@@ -169,9 +155,9 @@ export class OutlineGenerationService {
       return null;
     }
 
-    const chaptersPlan = snapshot.chaptersPlan;
-    if (snapshot.nextChapterNumber > chaptersPlan.length) {
-      console.log(`[Outline] 书籍《${snapshot.bookTitle}》已完成所有 ${chaptersPlan.length} 章，跳过大纲生成`);
+    const chaptersPlan = snapshot.chaptersPlan as ChapterPlan[] | null;
+    if (!chaptersPlan || snapshot.nextChapterNumber > chaptersPlan.length) {
+      console.log(`[Outline] 书籍《${snapshot.bookTitle}》已完成所有 ${chaptersPlan?.length ?? 0} 章，跳过大纲生成`);
       return null;
     }
 
@@ -193,12 +179,7 @@ export class OutlineGenerationService {
     const bookOutline: BookOutline = {
       title: snapshot.bookTitle,
       summary: snapshot.originalIntent || '',
-      characters: (snapshot.characters as unknown as Array<{
-        name: string;
-        role: string;
-        description: string;
-        motivation: string;
-      }>) || [],
+      characters: (snapshot.characters as Character[]) || [],
       chapters: chaptersPlan,
       themes: [],
       tone: '',
@@ -211,7 +192,7 @@ export class OutlineGenerationService {
       return {
         title: snapshot.bookTitle,
         summary: snapshot.originalIntent || '',
-        characters: snapshot.characters || [],
+        characters: (snapshot.characters as Character[]) || [],
         chapters: chaptersPlan,
         originalChapters: chaptersPlan,
       };
@@ -245,7 +226,7 @@ export class OutlineGenerationService {
         return {
           title: snapshot.bookTitle,
           summary: snapshot.originalIntent || '',
-          characters: snapshot.characters || [],
+          characters: (snapshot.characters as Character[]) || [],
           chapters: updatedChapters,
           originalChapters: chaptersPlan,
         };
@@ -257,7 +238,7 @@ export class OutlineGenerationService {
     return {
       title: snapshot.bookTitle,
       summary: snapshot.originalIntent || '',
-      characters: snapshot.characters || [],
+      characters: (snapshot.characters as Character[]) || [],
       chapters: chaptersPlan,
       originalChapters: chaptersPlan,
     };

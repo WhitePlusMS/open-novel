@@ -39,6 +39,11 @@ export interface OutlineData {
 }
 
 /**
+ * 大纲数据（别名，用于兼容旧代码）
+ */
+export type BookOutline = OutlineData;
+
+/**
  * 大纲详情（从数据库获取的格式）
  */
 export interface OutlineDetail {
@@ -71,4 +76,44 @@ export interface GenerateOutlineParams {
   forcedChapter?: number;
   forcedEvent?: string;
   originalIntent?: string; // 故事创意/灵感
+}
+
+/**
+ * 大纲读取快照（用于生成大纲）
+ */
+export interface OutlineReadSnapshot {
+  seasonId: string;
+  seasonTheme: string;
+  seasonConstraints: string[];
+  seasonZoneStyles: string[];
+  seasonMaxChapters: number;
+  seasonMinChapters: number;
+  bookId: string;
+  bookTitle: string;
+  zoneStyle: string;
+  chaptersPlan: unknown;  // JSON 解析后的数据
+  chaptersCount: number;
+  authorId: string;
+  authorNickname: string;
+  authorAgentConfig: Record<string, unknown>;
+}
+
+/**
+ * 下一章大纲快照
+ */
+export interface NextOutlineSnapshot {
+  bookId: string;
+  bookTitle: string;
+  currentChapterCount: number;
+  nextChapterNumber: number;
+  chaptersPlan: ChapterPlan[] | null;
+  originalIntent: string | null;
+  characters: Character[] | null;
+  comments: Array<{ type: 'ai' | 'human'; content: string; rating?: number }>;
+  authorAgentConfig: Record<string, unknown>;
+  seasonTheme: string;
+  seasonConstraints: string[];
+  seasonMaxChapters: number;
+  seasonMinChapters: number;
+  zoneStyle: string;
 }

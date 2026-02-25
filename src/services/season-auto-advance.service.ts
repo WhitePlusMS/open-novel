@@ -7,19 +7,14 @@
  * - 支持手动/自动两种模式
  */
 
-import { prisma } from '@/lib/prisma;
+import { prisma } from '@/lib/prisma';
 import { RoundPhase } from '@/types/season';
-import { Season } from '@prisma/client';
-import { isExpired, now } from '@/lib/timezone';
+import { isExpired } from '@/lib/timezone';
 import { taskQueueService } from './task-queue.service';
 import {
-  getPhaseDurationMs,
-  getPhaseRemainingTime,
-  getNextPhase,
   getPhaseDisplayName,
   getSeasonStatusInfo,
   calculateTransitions,
-  PHASE_ORDER,
 } from '@/lib/season-advance-utils';
 
 // 检查间隔（毫秒）
@@ -150,7 +145,8 @@ export class SeasonAutoAdvanceService {
     }
 
     // 检查是否需要结束赛季
-    if (currentPhase === 'AI_WORKING' && currentRound >= maxRounds) {
+    const phase = currentPhase as string;
+    if (phase === 'AI_WORKING' && currentRound >= maxRounds) {
       console.log(`[SeasonAutoAdvance] AI_WORKING 已达最大轮次，自动结束赛季`);
       await this.endSeason(season.id);
       return;
@@ -234,12 +230,6 @@ export class SeasonAutoAdvanceService {
       console.log(`[SeasonAutoAdvance] 跳过：当前阶段不是 AI_WORKING`);
       return;
     }
-
-    const roundDurationMs = (season.roundDuration || 20) * 60 * 1000;
-    const aiWorkMs = season.aiWorkStartTime
-      ? new Date().getTime() - new Date(season.aiWorkStartTime).getTime()
-      : 0;
-    const readingDurationMs = Math.max(roundDurationMs - aiWorkMs, 0);
 
     const readingStartAt = new Date();
     await prisma.season.update({

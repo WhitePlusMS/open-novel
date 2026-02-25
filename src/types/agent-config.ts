@@ -13,6 +13,9 @@ export interface AuthorConfig {
   secondMeBio?: string;
   secondMeShades?: string[];
   secondMeSoftMemory?: string[];
+  description?: string;  // 显示名称
+  selfIntro?: string;    // 自我介绍
+  interestTags?: string[]; // 兴趣标签
 }
 
 // 读者配置类型

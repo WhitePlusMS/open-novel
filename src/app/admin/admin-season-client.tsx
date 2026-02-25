@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect } from 'react';
-import { Button } from '@/components/ui/button';
 import {
   CurrentSeasonStatus,
   SeasonConfigFormComponent,
@@ -19,7 +18,7 @@ interface TabButtonProps {
   active: boolean;
   onClick: () => void;
   children: React.ReactNode;
-  colorClass?: string;
+  colorClass?: 'purple' | 'red';
 }
 
 function TabButton({ active, onClick, children, colorClass = 'purple' }: TabButtonProps) {
@@ -201,8 +200,6 @@ export function AdminSeasonClient({
         <SeasonHistoryList
           allSeasons={allSeasons || []}
           leaderboardData={leaderboardData}
-          onDeleteSeason={handleDeleteSeason}
-          deletingSeason={deletingSeason}
         />
       )}
 

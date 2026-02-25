@@ -13,6 +13,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { readerAgentService } from '@/services/reader-agent.service';
+import { READER_AGENT_DEFAULTS } from '@/config/reader-agent.constants';
 
 export const dynamic = 'force-dynamic';
 
@@ -55,7 +56,7 @@ async function runReaderTask() {
         book: { seasonId: season.id },
         status: 'PUBLISHED',
         publishedAt: {
-          gte: new Date(Date.now() - 15 * 60 * 1000), // 最近 15 分钟内发布
+          gte: new Date(Date.now() - READER_AGENT_DEFAULTS.SCHEDULER.RECENT_MINUTES * 60 * 1000), // 最近 15 分钟内发布
         },
       },
       select: {
@@ -178,8 +179,8 @@ export async function GET(request: Request) {
         todayAiComments,
         activeReaderAgents,
         config: {
-          topBooksCount: 10,
-          agentsPerChapter: 3,
+          topBooksCount: READER_AGENT_DEFAULTS.SCHEDULER.TOP_BOOKS_COUNT,
+          agentsPerChapter: READER_AGENT_DEFAULTS.SCHEDULER.AGENTS_PER_CHAPTER,
         },
       },
       message: 'success',

@@ -8,30 +8,14 @@ import { buildReaderSystemPrompt, buildReaderActionControl } from '@/lib/secondm
 import { testModeSendChat } from '@/lib/secondme/client';
 import { parseLLMJsonWithRetry } from '@/lib/utils/llm-parser';
 import { safeJsonField } from '@/lib/utils/jsonb-utils';
-
-interface ReaderFeedback {
-  overall_rating: number;
-  praise: string;
-  critique: string;
-}
+import { READER_AGENT_DEFAULTS, ReaderFeedback } from '@/config/reader-agent.constants';
 
 // 测试模式默认配置
 const DEFAULT_READER_CONFIG = {
-  readerPersonality: '喜欢分析故事结构和人物塑造，对文笔有较高要求',
-  readingPreferences: {
-    preferredGenres: [] as string[],
-    style: '客观中肯',
-    minRatingThreshold: 5,
-  },
-  commentingBehavior: {
-    enabled: true,
-    commentProbability: 0.5,
-    ratingThreshold: 6,
-  },
-  interactionBehavior: {
-    pokeEnabled: true,
-    giftEnabled: true,
-  },
+  readerPersonality: READER_AGENT_DEFAULTS.DEFAULT_PERSONALITY,
+  readingPreferences: READER_AGENT_DEFAULTS.DEFAULT_PREFERENCES,
+  commentingBehavior: READER_AGENT_DEFAULTS.DEFAULT_COMMENTING,
+  interactionBehavior: READER_AGENT_DEFAULTS.DEFAULT_INTERACTION,
 };
 
 export async function POST(request: NextRequest) {
@@ -105,7 +89,7 @@ export async function POST(request: NextRequest) {
     const message = `你正在阅读《${book.title}》第 ${chapter.chapterNumber} 章 "${chapter.title}"，作者：${book.author.nickname}。
 
 ## 章节内容
-${chapter.content.slice(0, 4000)} ${chapter.content.length > 4000 ? '...(内容截断)' : ''}
+${chapter.content.slice(0, READER_AGENT_DEFAULTS.CHAPTER_CONTENT_TRUNCATE)} ${chapter.content.length > READER_AGENT_DEFAULTS.CHAPTER_CONTENT_TRUNCATE ? '...(内容截断)' : ''}
 
 ${actionControl}`;
 

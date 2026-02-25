@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { userService, AgentConfig, ReaderConfig } from '@/services/user.service';
+import { AUTHOR_CONFIG_DEFAULTS, READER_CONFIG_DEFAULTS, validateWritingStyle, validateWritingLength } from '@/config/user.constants';
 
 // API 响应 DTO
 interface ApiResponse<T = unknown> {
@@ -52,17 +53,17 @@ export async function PUT(request: NextRequest) {
       const readerConfig: ReaderConfig = {
         readerPersonality: readerPersonality ?? '',
         readingPreferences: readingPreferences ?? {
-          preferredGenres: [],
-          minRatingThreshold: 3.0,
+          preferredGenres: READER_CONFIG_DEFAULTS.DEFAULT_PREFERRED_GENRES,
+          minRatingThreshold: READER_CONFIG_DEFAULTS.DEFAULT_MIN_RATING_THRESHOLD,
         },
         commentingBehavior: commentingBehavior ?? {
-          enabled: true,
-          commentProbability: 0.5,
-          ratingThreshold: 6,
+          enabled: READER_CONFIG_DEFAULTS.DEFAULT_COMMENTING_ENABLED,
+          commentProbability: READER_CONFIG_DEFAULTS.DEFAULT_COMMENT_PROBABILITY,
+          ratingThreshold: READER_CONFIG_DEFAULTS.DEFAULT_RATING_THRESHOLD,
         },
         interactionBehavior: interactionBehavior ?? {
-          pokeEnabled: true,
-          giftEnabled: true,
+          pokeEnabled: READER_CONFIG_DEFAULTS.DEFAULT_POKE_ENABLED,
+          giftEnabled: READER_CONFIG_DEFAULTS.DEFAULT_GIFT_ENABLED,
         },
       };
 
@@ -87,24 +88,13 @@ export async function PUT(request: NextRequest) {
         wordCountTarget,
       } = configData as Record<string, unknown>;
 
-      // 转换 writingStyle 为合法类型
-      const validWritingStyles = ['严肃', '幽默', '浪漫', '悬疑', '多变'] as const;
-      const inputWritingStyle = (writingStyle as string) || '多变';
-
-      const validWritingLengthPreferences = ['short', 'medium', 'long'] as const;
-      const inputWritingLengthPreference = (writingLengthPreference as string) || 'medium';
-
       const config: AgentConfig = {
         writerPersonality: (writerPersonality as string) ?? '',
-        writingStyle: validWritingStyles.includes(inputWritingStyle as typeof validWritingStyles[number])
-          ? inputWritingStyle as typeof validWritingStyles[number]
-          : '多变',
-        writingLengthPreference: validWritingLengthPreferences.includes(inputWritingLengthPreference as typeof validWritingLengthPreferences[number])
-          ? inputWritingLengthPreference as typeof validWritingLengthPreferences[number]
-          : 'medium',
-        adaptability: (adaptability as number) ?? 0.8,
+        writingStyle: validateWritingStyle((writingStyle as string) || AUTHOR_CONFIG_DEFAULTS.DEFAULT_WRITING_STYLE),
+        writingLengthPreference: validateWritingLength((writingLengthPreference as string) || AUTHOR_CONFIG_DEFAULTS.DEFAULT_WRITING_LENGTH),
+        adaptability: (adaptability as number) ?? AUTHOR_CONFIG_DEFAULTS.DEFAULT_ADAPTABILITY,
         preferredGenres: (preferredGenres as string[]) ?? [],
-        wordCountTarget: (wordCountTarget as number) ?? 2000,
+        wordCountTarget: (wordCountTarget as number) ?? AUTHOR_CONFIG_DEFAULTS.DEFAULT_WORD_COUNT,
       };
 
       console.log(`[User][${requestId}] Author config:`, JSON.stringify(config));

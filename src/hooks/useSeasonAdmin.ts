@@ -119,19 +119,12 @@ export function useSeasonAdmin({ seasonNumber, isAdmin }: UseSeasonAdminOptions)
 
   // 重置表单
   const resetForm = useCallback(() => {
-    const nextNumber = getNextSeasonNumber();
+    const nextNumber = seasonQueue.length === 0
+      ? seasonNumber + 1
+      : Math.max(...seasonQueue.map(q => q.seasonNumber), seasonNumber) + 1;
     setConfigForm(getDefaultConfigForm(nextNumber));
     setEditingItem(null);
   }, [seasonQueue, seasonNumber]);
-
-  // 获取下一个可用赛季编号
-  const getNextSeasonNumber = () => {
-    if (seasonQueue.length === 0) {
-      return seasonNumber + 1;
-    }
-    const maxNum = Math.max(...seasonQueue.map(q => q.seasonNumber), seasonNumber);
-    return maxNum + 1;
-  };
 
   // 配置表单变更处理
   const handleConfigChange = (field: keyof SeasonConfigForm, value: string | number) => {
@@ -519,6 +512,5 @@ export function useSeasonAdmin({ seasonNumber, isAdmin }: UseSeasonAdminOptions)
     handleDeleteSeason,
     fetchSeasonQueue,
     loadHistoryLeaderboards,
-    getNextSeasonNumber,
   };
 }

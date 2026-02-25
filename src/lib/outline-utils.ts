@@ -3,8 +3,8 @@
  */
 
 import { prisma } from '@/lib/prisma';
-import { toJsonValue } from '@/lib/utils/jsonb-utils';
-import type { BookOutline, ChapterOutline, OutlineReadSnapshot, NextOutlineSnapshot } from '@/types';
+import { toJsonValue, fromJsonValue } from '@/lib/utils/jsonb-utils';
+import type { OutlineReadSnapshot, NextOutlineSnapshot, ChapterPlan, Character } from '@/types/outline';
 
 /**
  * 获取数据库并发数
@@ -83,7 +83,7 @@ export async function buildOutlineSnapshots(seasonId: string): Promise<OutlineRe
     bookId: book.id,
     bookTitle: book.title,
     zoneStyle: book.zoneStyle,
-    chaptersPlan: book.chaptersPlan,
+    chaptersPlan: fromJsonValue<ChapterPlan[]>(book.chaptersPlan),
     chaptersCount: book._count?.chapters ?? 0,
     authorId: book.author.id,
     authorNickname: book.author.nickname || '作家',
@@ -127,7 +127,7 @@ export async function buildOutlineSnapshotForBook(bookId: string): Promise<Outli
     bookId: book.id,
     bookTitle: book.title,
     zoneStyle: book.zoneStyle,
-    chaptersPlan: book.chaptersPlan,
+    chaptersPlan: fromJsonValue<ChapterPlan[]>(book.chaptersPlan),
     chaptersCount: book._count?.chapters ?? 0,
     authorId: book.author.id,
     authorNickname: book.author.nickname || '作家',
@@ -190,23 +190,19 @@ export async function buildNextOutlineSnapshots(
     const comments = commentsMap.get(book.id) ?? [];
 
     snapshots.push({
-      seasonId: season.id,
       seasonTheme: season.themeKeyword,
       seasonConstraints: season.constraints as unknown as string[],
-      seasonZoneStyles: season.zoneStyles as unknown as string[],
       seasonMaxChapters: season.maxChapters || 7,
       seasonMinChapters: season.minChapters || 3,
       bookId: book.id,
       bookTitle: book.title,
       zoneStyle: book.zoneStyle,
-      chaptersPlan: book.chaptersPlan as unknown as ChapterOutline[] | null,
+      chaptersPlan: fromJsonValue<ChapterPlan[]>(book.chaptersPlan),
       originalIntent: book.originalIntent,
-      characters: book.characters as unknown[] | null,
+      characters: fromJsonValue<Character[]>(book.characters),
       currentChapterCount,
       nextChapterNumber,
       comments,
-      authorId: book.author.id,
-      authorNickname: book.author.nickname || '作家',
       authorAgentConfig: book.author.agentConfig as unknown as Record<string, unknown>,
     });
   });
@@ -336,7 +332,7 @@ export async function saveOutlineVersion(
 /**
  * 获取章节概要
  */
-export function getChapterSummary(chapters: ChapterOutline[], chapterNumber: number): string {
+export function getChapterSummary(chapters: ChapterPlan[], chapterNumber: number): string {
   const chapter = chapters.find((c) => c.number === chapterNumber);
   return chapter?.summary || '';
 }

@@ -11,15 +11,11 @@ import { getStatusBadge, getPhaseDisplayName, formatConstraints, formatZoneStyle
 interface SeasonHistoryListProps {
   allSeasons: SeasonDetail[];
   leaderboardData: Record<string, LeaderboardData>;
-  onDeleteSeason: (seasonId: string, seasonNumber: number) => void;
-  deletingSeason: string | null;
 }
 
 export function SeasonHistoryList({
   allSeasons,
   leaderboardData,
-  onDeleteSeason,
-  deletingSeason,
 }: SeasonHistoryListProps) {
   if (!allSeasons || allSeasons.length === 0) {
     return (
@@ -36,8 +32,6 @@ export function SeasonHistoryList({
           key={s.id}
           season={s}
           leaderboard={leaderboardData[s.id]}
-          onDeleteSeason={onDeleteSeason}
-          deletingSeason={deletingSeason}
         />
       ))}
     </div>
@@ -47,15 +41,11 @@ export function SeasonHistoryList({
 interface SeasonHistoryCardProps {
   season: SeasonDetail;
   leaderboard?: LeaderboardData;
-  onDeleteSeason: (seasonId: string, seasonNumber: number) => void;
-  deletingSeason: string | null;
 }
 
 function SeasonHistoryCard({
   season,
   leaderboard,
-  onDeleteSeason,
-  deletingSeason,
 }: SeasonHistoryCardProps) {
   return (
     <div className="p-4 bg-white dark:bg-surface-800 rounded-lg border border-surface-200 dark:border-surface-700">

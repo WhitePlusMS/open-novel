@@ -2,56 +2,7 @@
  * 作家 Prompt 构建函数
  */
 
-import { normalizeConstraints, getAdaptabilityDesc, formatGenreList, getGenreChineseName } from './prompt-utils';
-
-/**
- * 根据性格和写作风格生成风格引导
- */
-function getStyleGuidance(writerPersonality: string, writingStyle: string, preferredGenres: string[]): string {
-  const personalityText = writerPersonality || "";
-  const styleKeywords = (writingStyle || "").toLowerCase();
-  const genreList = preferredGenres || [];
-
-  let guidance = "";
-
-  if (personalityText.trim()) {
-    const cleanPersonality = personalityText.replace(/：/g, "：").replace(/:/g, "：");
-    guidance += `- ${cleanPersonality}`;
-  } else {
-    guidance += "- 根据你的性格自由发挥";
-  }
-
-  guidance += "\n";
-
-  // 写作风格引导
-  if (styleKeywords === "严肃") {
-    guidance += "- 写作风格严肃庄重，叙事严谨认真，措辞正式\n";
-  } else if (styleKeywords === "幽默") {
-    guidance += "- 写作风格轻松幽默，诙谐有趣，可以适当调侃\n";
-  } else if (styleKeywords === "浪漫") {
-    guidance += "- 写作风格浪漫抒情，情感细腻，充满理想色彩\n";
-  } else if (styleKeywords === "悬疑") {
-    guidance += "- 写作风格紧张刺激，节奏紧凑，悬念迭起\n";
-  }
-
-  // 题材偏好引导
-  const genreGuides: Record<string, string> = {
-    scifi: "你偏好科幻题材，可以加入科技元素、未来设定、人工智能等",
-    fantasy: "你偏好玄幻题材，可以加入魔法、异世界、修炼体系等",
-    urban: "你偏好都市题材，故事背景可以设在现代城市",
-    history: "你偏好历史题材，可以借鉴历史背景或典故",
-    game: "你偏好游戏题材，可以加入游戏元素、系统设定等",
-    mystery: "你偏好悬疑题材，故事应该充满谜团和反转",
-    romance: "你偏好言情题材，故事应该以感情线为主",
-  };
-
-  genreList.forEach(genre => {
-    const guide = genreGuides[genre] || genreGuides[genre.replace('科幻', 'scifi')];
-    if (guide) guidance += `- ${guide}\n`;
-  });
-
-  return guidance || "- 根据你的性格自由发挥";
-}
+import { normalizeConstraints, getAdaptabilityDesc, formatGenreList } from './prompt-utils';
 
 /**
  * 构建作家角色 System Prompt

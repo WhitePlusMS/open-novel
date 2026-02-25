@@ -2,6 +2,153 @@
  * 赛季管理后台类型定义
  */
 
+import { RoundPhase } from '@/types/season';
+
+/**
+ * 赛季信息接口（用于 API 调用）
+ */
+export interface SeasonInfo {
+  seasonNumber: number;
+  themeKeyword: string;
+  constraints: readonly string[] | string[];
+  zoneStyles: readonly string[] | string[];
+  rewards: Record<string, unknown>;
+  minChapters: number;
+  maxChapters: number;
+}
+
+/**
+ * Agent 参赛决策结果
+ */
+export interface AgentDecisionResult {
+  decision: 'join' | 'skip';
+  bookTitle?: string;
+  shortDescription?: string;
+  zoneStyle?: string;
+  reason: string;
+}
+
+/**
+ * 书籍创建结果
+ */
+export interface BookCreationResult {
+  userId: string;
+  userName: string;
+  bookTitle?: string;
+  success: boolean;
+  skipped?: boolean;
+  reason?: string;
+}
+
+/**
+ * 赛季开始请求 DTO
+ */
+export interface StartSeasonDTO {
+  seasonNumber?: number;
+  themeKeyword?: string;
+  constraints?: string[];
+  zoneStyles?: string[];
+  maxChapters?: number;
+  minChapters?: number;
+  roundDuration?: number;
+  rewards?: {
+    first: number;
+    second: number;
+    third: number;
+  };
+}
+
+/**
+ * 赛季开始响应
+ */
+export interface StartSeasonResponse {
+  seasonId: string;
+  seasonNumber: number;
+  themeKeyword: string;
+  totalAgents: number;
+  joinCount: number;
+  skipCount: number;
+  participantCount: number;
+  results: Array<{
+    user: string;
+    action: string;
+    bookTitle?: string;
+    success: boolean;
+    reason?: string;
+  }>;
+}
+
+/**
+ * 阶段推进请求 DTO
+ */
+export interface PhaseAdvanceDTO {
+  action?: 'NEXT_PHASE' | 'SKIP_TO_WRITING' | 'END_SEASON';
+}
+
+/**
+ * 阶段推进响应
+ */
+export interface PhaseAdvanceResponse {
+  seasonId: string;
+  seasonNumber: number;
+  currentRound: number;
+  currentPhase: RoundPhase;
+  phaseDisplayName: string;
+  phaseDescription: string;
+  action: string;
+  bookCount: number;
+  task?: {
+    type: string;
+    message: string;
+  };
+  books: Array<{
+    id: string;
+    title: string;
+    author: string;
+    currentChapter: number;
+  }>;
+}
+
+/**
+ * 追赶模式请求 DTO
+ */
+export interface CatchUpDTO {
+  targetRound?: number;
+}
+
+/**
+ * 追赶状态响应
+ */
+export interface CatchUpStatusResponse {
+  hasOutline: boolean;
+  outlineChapters: number[];
+  existingChapters: number[];
+  missingChapters: number[];
+  targetRound: number;
+  maxOutlineChapter: number;
+  needsCatchUp: boolean;
+}
+
+/**
+ * 赛季状态响应
+ */
+export interface SeasonStatusResponse {
+  seasonId: string | null;
+  seasonNumber: number | null;
+  themeKeyword: string | null;
+  currentRound: number;
+  currentPhase: RoundPhase;
+  phaseDisplayName: string;
+  phaseDescription: string;
+  startTime: Date | null;
+  endTime: Date | null;
+  signupDeadline: Date | null;
+  maxChapters: number | null;
+  phaseDurations: {
+    roundDuration: number;
+  };
+}
+
 // 赛季队列项接口
 export interface SeasonQueueItem {
   id: string;

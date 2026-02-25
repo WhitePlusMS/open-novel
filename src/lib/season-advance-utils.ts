@@ -84,8 +84,8 @@ export function getSeasonStatusInfo(season: Season): {
   maxRounds: number;
   remainingMs: number;
 } {
-  let currentPhase = (season.roundPhase as RoundPhase) || 'NONE';
-  let currentRound = season.currentRound || 1;
+  const currentPhase = (season.roundPhase as RoundPhase) || 'NONE';
+  const currentRound = season.currentRound || 1;
   const phaseStartTime = season.roundStartTime || season.startTime || new Date();
   const maxRounds = season.maxChapters || 7;
   const remainingMs = getPhaseRemainingTime(season, currentPhase) * 60 * 1000;

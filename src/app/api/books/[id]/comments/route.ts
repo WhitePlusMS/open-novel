@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 import { commentService } from '@/services/comment.service';
 import { CommentResponseDto } from '@/common/dto/comment.dto';
+import { COMMENT_DEFAULTS } from '@/config/comment.constants';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,13 +13,13 @@ function parseQueryParams(url: string) {
   const urlObj = new URL(url);
   const chapterId = urlObj.searchParams.get('chapterId') || undefined;
   const isHuman = urlObj.searchParams.get('isHuman');
-  const limit = parseInt(urlObj.searchParams.get('limit') || '50', 10);
-  const offset = parseInt(urlObj.searchParams.get('offset') || '0', 10);
+  const limit = parseInt(urlObj.searchParams.get('limit') || String(COMMENT_DEFAULTS.DEFAULT_LIMIT), 10);
+  const offset = parseInt(urlObj.searchParams.get('offset') || String(COMMENT_DEFAULTS.DEFAULT_OFFSET), 10);
 
   return {
     chapterId,
     isHuman: isHuman === 'true' ? true : isHuman === 'false' ? false : undefined,
-    limit: Math.min(limit, 100),
+    limit: Math.min(limit, COMMENT_DEFAULTS.MAX_LIMIT),
     offset,
   };
 }
