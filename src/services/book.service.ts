@@ -4,6 +4,18 @@ import { Prisma } from '@prisma/client';
 import { BookStatus } from '@/types/book';
 import { normalizeZoneStyle } from '@/lib/utils/zone';
 
+// 书籍带统计信息的类型
+type BookWithStats = Prisma.BookGetPayload<{
+  include: {
+    author: { select: { id: true; nickname: true; avatar: true } };
+    _count: { select: { chapters: true; comments: true } };
+  };
+}> & {
+  chapterCount: number;
+  commentCount: number;
+  viewCount: number;
+};
+
 export class BookService {
   /**
    * 获取书籍列表 - 优化版本：使用数据库聚合替代代码循环
@@ -51,6 +63,62 @@ export class BookService {
     }));
 
     return { books: booksWithStats, total };
+  }
+
+  /**
+   * 批量获取多个状态的书籍 - 优化首页加载
+   * 将原来的3次查询合并为1次
+   */
+  async getBooksByStatuses(options: {
+    statuses: BookStatus[];
+    seasonId: string;
+    limitPerStatus?: number;
+  }) {
+    const { statuses, seasonId, limitPerStatus = 20 } = options;
+
+    // 一次查询获取所有状态的书，使用 status 排序让结果分组
+    const books = await prisma.book.findMany({
+      where: {
+        seasonId,
+        status: { in: statuses },
+      },
+      include: {
+        author: { select: { id: true, nickname: true, avatar: true } },
+        _count: {
+          select: {
+            chapters: true,
+            comments: true,
+          },
+        },
+      },
+      orderBy: [
+        { status: 'asc' },  // 先按状态分组
+        { heatValue: 'desc' }, // 再按热度排序
+      ],
+      take: statuses.length * limitPerStatus,
+    });
+
+    // 按状态分组
+    const result: Record<BookStatus, BookWithStats[]> = {
+      ACTIVE: [],
+      COMPLETED: [],
+      DRAFT: [],
+      DISCONTINUED: [],
+    };
+
+    for (const book of books) {
+      const status = book.status as BookStatus;
+      if (result[status]) {
+        result[status].push({
+          ...book,
+          chapterCount: book._count.chapters,
+          commentCount: book._count.comments,
+          viewCount: book.viewCount || 0,
+        });
+      }
+    }
+
+    return result;
   }
 
   /**

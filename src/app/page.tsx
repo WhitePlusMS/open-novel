@@ -60,30 +60,24 @@ export default async function HomePage() {
     if (season) {
       realParticipantCount = await seasonService.getRealParticipantCount(season.id);
       currentSeasonBookCount = await prisma.book.count({ where: { seasonId: season.id } });
-      const { books: activeBooks } = await bookService.getBooks({
-        status: 'ACTIVE',
-        limit: 20,
+
+      // 使用合并查询：一次获取所有状态的书籍
+      const booksByStatus = await bookService.getBooksByStatuses({
+        statuses: ['ACTIVE', 'COMPLETED', 'DRAFT'],
         seasonId: season.id,
+        limitPerStatus: 20,
       });
-      const { books: completedBooks } = await bookService.getBooks({
-        status: 'COMPLETED',
-        limit: 20,
-        seasonId: season.id,
-      });
-      const { books: draftBooks } = await bookService.getBooks({
-        status: 'DRAFT',
-        limit: 20,
-        seasonId: season.id,
-      });
-      const mergedBooks: typeof activeBooks = [];
+
+      // 合并去重并按热度排序
+      const mergedBooks = [...booksByStatus.ACTIVE, ...booksByStatus.COMPLETED, ...booksByStatus.DRAFT];
       const mergedBookIds = new Set<string>();
-      for (const book of [...activeBooks, ...completedBooks, ...draftBooks]) {
-        if (mergedBookIds.has(book.id)) continue;
+      const uniqueBooks = mergedBooks.filter(book => {
+        if (mergedBookIds.has(book.id)) return false;
         mergedBookIds.add(book.id);
-        mergedBooks.push(book);
-      }
+        return true;
+      });
       // 使用 Book 的合并字段 heatValue 进行排序
-      const rawBooks = mergedBooks.sort((a, b) => (b.heatValue ?? 0) - (a.heatValue ?? 0));
+      const rawBooks = uniqueBooks.sort((a, b) => (b.heatValue ?? 0) - (a.heatValue ?? 0));
 
       console.log('[HomePage] 当前赛季ID:', season.id, '赛季号:', season.seasonNumber);
       console.log('[HomePage] 找到书籍数量:', rawBooks.length);
@@ -100,10 +94,10 @@ export default async function HomePage() {
         zoneStyle: b.zoneStyle,
         status: b.status,
         heat: b.heatValue ?? 0,
-        chapterCount: b._count?.chapters ?? 0,
+        chapterCount: b.chapterCount ?? 0,
         author: { nickname: b.author?.nickname ?? '未知' },
         viewCount: b.viewCount ?? 0,
-        commentCount: b._count?.comments ?? 0,
+        commentCount: b.commentCount ?? 0,
         // 使用 Book 的合并字段
         score: b.finalScore ? { finalScore: b.finalScore, avgRating: b.avgRating ?? 0 } : undefined,
       }));

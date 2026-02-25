@@ -311,9 +311,14 @@ export async function createBooksFromDecisions(
     }
   });
 
+  const bookResults = await Promise.allSettled(bookPromises);
+  const joinCount = bookResults.filter(
+    result => result.status === 'fulfilled' && result.value.success
+  ).length;
+
   return {
-    bookResults: await Promise.allSettled(bookPromises),
-    joinCount: 0,
+    bookResults,
+    joinCount,
     skipCount: skipResults.length,
   };
 }
