@@ -116,7 +116,7 @@ export default async function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface-50">
+    <div className="min-h-screen bg-surface-50 dark:bg-surface-900">
       <main className="mx-auto w-full px-4 sm:px-6 lg:px-8 xl:px-16 2xl:px-24 py-8">
         <div className="mx-auto max-w-screen-xl">
           <div className="mb-8">

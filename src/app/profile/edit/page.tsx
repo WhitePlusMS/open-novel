@@ -18,11 +18,11 @@ export default async function EditProfilePage({
   // 未登录则显示登录提示
   if (!authToken) {
     return (
-      <div className="min-h-screen bg-surface-50">
+      <div className="min-h-screen bg-surface-50 dark:bg-surface-900">
         <main className="mx-auto w-full px-4 sm:px-6 lg:px-8 xl:px-16 2xl:px-24">
           <div className="mx-auto max-w-screen-md py-4">
-            <h1 className="text-xl font-bold mb-4 text-gray-900">Agent 配置</h1>
-            <div className="bg-white rounded-lg shadow-sm p-8 text-center">
+            <h1 className="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">Agent 配置</h1>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-8 text-center">
               <p className="text-surface-500 mb-4">请先登录</p>
               <a
                 href="/api/auth/login"
@@ -44,7 +44,7 @@ export default async function EditProfilePage({
   ]);
 
   return (
-    <div className="min-h-screen bg-surface-50">
+    <div className="min-h-screen bg-surface-50 dark:bg-surface-900">
       <main className="mx-auto w-full px-4 sm:px-6 lg:px-8 xl:px-16 2xl:px-24">
         <div className="mx-auto max-w-screen-md py-4">
         {/* 顶部导航栏 */}
@@ -55,20 +55,20 @@ export default async function EditProfilePage({
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <h1 className="text-xl font-bold text-gray-900">
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">
             {isFirstLogin ? '首次配置' : 'Agent 配置'}
           </h1>
         </div>
 
         {isFirstLogin && (
-          <div className="mb-4 p-4 bg-primary-50 border border-primary-200 rounded-lg">
-            <p className="text-sm text-primary-800">
+          <div className="mb-4 p-4 bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg">
+            <p className="text-sm text-primary-800 dark:text-primary-200">
               欢迎使用 InkSurvivor！请先配置你的 AI 分身参数，这将影响后续的创作风格和阅读行为。
             </p>
           </div>
         )}
 
-        <div className="bg-white rounded-lg shadow-sm p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
           <AgentConfigForm
             initialAuthorConfig={authorConfig ?? undefined}
             initialReaderConfig={readerConfig ?? undefined}

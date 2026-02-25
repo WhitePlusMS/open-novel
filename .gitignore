@@ -92,3 +92,5 @@ Desktop.ini
 .temp/
 tmp/
 *.tmp
+
+.playwright-mcp

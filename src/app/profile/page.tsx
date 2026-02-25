@@ -19,14 +19,14 @@ export default async function ProfilePage() {
   // 未登录则显示登录提示
   if (!authToken) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-surface-900 dark:to-surface-800">
         <main className="mx-auto w-full px-4 sm:px-6 lg:px-8 xl:px-16 2xl:px-24">
           <div className="mx-auto max-w-screen-xl py-8">
-            <div className="overflow-hidden rounded-2xl bg-white shadow-card p-8 text-center">
+            <div className="overflow-hidden rounded-2xl bg-white dark:bg-gray-800 shadow-card p-8 text-center">
               <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-primary-100 to-primary-300 flex items-center justify-center">
                 <BookOpen className="h-10 w-10 text-primary-500" />
               </div>
-              <p className="text-gray-600 mb-6">登录后可查看个人中心</p>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">登录后可查看个人中心</p>
               <Link
                 href="/api/auth/login"
                 className="inline-block"
@@ -113,7 +113,7 @@ export default async function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-surface-900 dark:to-surface-800">
       <main className="mx-auto w-full px-4 sm:px-6 lg:px-8 xl:px-16 2xl:px-24">
         <div className="mx-auto max-w-screen-xl py-6">
         {/* 用户信息 */}
@@ -126,8 +126,8 @@ export default async function ProfilePage() {
         {participations.length > 0 && (
           <div className="mb-6">
             <div className="flex items-center gap-2 mb-4">
-              <Trophy className="h-5 w-5 text-gray-700" />
-              <h3 className="text-lg font-semibold text-gray-900">赛季战绩</h3>
+              <Trophy className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">赛季战绩</h3>
             </div>
 
             {participations.map((p) => (
@@ -139,7 +139,7 @@ export default async function ProfilePage() {
         {/* 我的书籍 */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">我的书籍</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">我的书籍</h3>
             <Link href="/create">
               <Button size="sm" variant="outline" className="gap-1">
                 <Plus className="h-4 w-4" />
@@ -154,17 +154,17 @@ export default async function ProfilePage() {
                 <Link
                   key={book.id}
                   href={`/book/${book.id}`}
-                  className="block overflow-hidden rounded-xl bg-white shadow-card transition-all hover:shadow-card-hover"
+                  className="block overflow-hidden rounded-xl bg-white dark:bg-gray-800 shadow-card transition-all hover:shadow-card-hover"
                 >
                   <div className="p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold text-gray-900 truncate">{book.title}</h4>
-                        <p className="text-sm text-gray-500">
+                        <h4 className="font-semibold text-gray-900 dark:text-gray-100 truncate">{book.title}</h4>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
                           {book._count?.chapters ?? 0} 章 · {book.status === 'COMPLETED' ? '已完结' : '连载中'}
                         </p>
                       </div>
-                      <span className="ml-3 flex-shrink-0 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
+                      <span className="ml-3 flex-shrink-0 rounded-full bg-gray-100 dark:bg-gray-700 px-3 py-1 text-xs font-medium text-gray-600 dark:text-gray-300">
                         {book.zoneStyle}
                       </span>
                     </div>
@@ -173,11 +173,11 @@ export default async function ProfilePage() {
               ))}
             </div>
           ) : (
-            <div className="overflow-hidden rounded-xl bg-white shadow-card p-8 text-center">
-              <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gray-100 flex items-center justify-center">
+            <div className="overflow-hidden rounded-xl bg-white dark:bg-gray-800 shadow-card p-8 text-center">
+              <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
                 <BookOpen className="h-8 w-8 text-gray-400" />
               </div>
-              <p className="text-gray-500 mb-4">暂无书籍</p>
+              <p className="text-gray-500 dark:text-gray-400 mb-4">暂无书籍</p>
               <Link href="/create" className="inline-block">
                 <Button size="sm">立即创建</Button>
               </Link>
@@ -186,7 +186,7 @@ export default async function ProfilePage() {
         </div>
 
         {/* 退出登录 */}
-        <div className="pt-4 border-t border-gray-200">
+        <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
           <LogoutButton />
         </div>
       </div>

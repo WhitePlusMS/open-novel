@@ -267,15 +267,15 @@ export function AgentConfigForm({
   return (
     <div className="space-y-6">
       {/* 角色切换 Tab */}
-      <div className="flex gap-2 p-1 bg-surface-100 rounded-lg">
+      <div className="flex gap-2 p-1 bg-surface-100 dark:bg-surface-800 rounded-lg">
         <button
           type="button"
           onClick={() => setActiveTab('author')}
           className={cn(
             'flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm font-medium transition-all',
             activeTab === 'author'
-              ? 'bg-white text-primary-600 shadow-sm'
-              : 'text-surface-600 hover:text-surface-900'
+              ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm'
+              : 'text-surface-600 dark:text-surface-400 hover:text-surface-900 dark:hover:text-surface-100'
           )}
         >
           <BookOpen className="w-4 h-4" />
@@ -287,8 +287,8 @@ export function AgentConfigForm({
           className={cn(
             'flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm font-medium transition-all',
             activeTab === 'reader'
-              ? 'bg-white text-primary-600 shadow-sm'
-              : 'text-surface-600 hover:text-surface-900'
+              ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm'
+              : 'text-surface-600 dark:text-surface-400 hover:text-surface-900 dark:hover:text-surface-100'
           )}
         >
           <Eye className="w-4 h-4" />
@@ -300,7 +300,7 @@ export function AgentConfigForm({
       {activeTab === 'author' && (
         <div className="space-y-6">
           {/* 性格描述 */}
-          <div className="bg-surface-50 rounded-lg p-4">
+          <div className="bg-surface-50 dark:bg-surface-800 rounded-lg p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <BookOpen className="w-4 h-4 text-primary-600" />
@@ -318,7 +318,7 @@ export function AgentConfigForm({
                 从 SecondMe 导入
               </Button>
             </div>
-            <p className="text-xs text-gray-500 mb-3">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
               选择或输入你的创作性格，点击选项可直接填入
             </p>
             {/* 预设选项 */}
@@ -334,7 +334,7 @@ export function AgentConfigForm({
                     'px-3 py-1.5 rounded-full text-sm transition-all',
                     authorConfig.writerPersonality === item.value
                       ? 'bg-primary-600 text-white'
-                      : 'bg-white text-surface-600 hover:bg-surface-200 border border-surface-200'
+                      : 'bg-white dark:bg-gray-700 text-surface-600 dark:text-surface-400 hover:bg-surface-200 dark:hover:bg-surface-600 border border-surface-200 dark:border-surface-600'
                   )}
                 >
                   {item.label}
@@ -348,13 +348,13 @@ export function AgentConfigForm({
                 setAuthorConfig({ ...authorConfig, writerPersonality: e.target.value })
               }
               rows={6}
-              className="w-full px-3 py-2 border border-surface-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-surface-200 dark:border-surface-600 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               placeholder="或自定义输入你的性格描述..."
             />
           </div>
 
           {/* 写作风格 */}
-          <div className="bg-surface-50 rounded-lg p-4">
+          <div className="bg-surface-50 dark:bg-surface-800 rounded-lg p-4">
             <div className="flex items-center gap-2 mb-3">
               <Pen className="w-4 h-4 text-primary-600" />
               <h3 className="font-medium">写作风格</h3>
@@ -374,7 +374,7 @@ export function AgentConfigForm({
                     'p-3 border rounded-lg text-left transition-all',
                     authorConfig.writingStyle === style.value
                       ? 'border-primary-500 bg-primary-50'
-                      : 'border-surface-200 hover:border-surface-300 bg-white'
+                      : 'border-surface-200 dark:border-surface-600 hover:border-surface-300 dark:hover:border-surface-500 bg-white dark:bg-gray-700'
                   )}
                 >
                   <div className="font-medium">{style.label}</div>
@@ -387,12 +387,12 @@ export function AgentConfigForm({
           </div>
 
           {/* 听劝指数 */}
-          <div className="bg-surface-50 rounded-lg p-4">
+          <div className="bg-surface-50 dark:bg-surface-800 rounded-lg p-4">
             <div className="flex items-center gap-2 mb-3">
               <Star className="w-4 h-4 text-orange-500" />
               <h3 className="font-medium">听劝指数</h3>
             </div>
-            <label className="block text-sm text-gray-600 mb-2">
+            <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">
               听劝指数：{authorConfig.adaptability.toFixed(1)}
             </label>
             <input
@@ -419,12 +419,12 @@ export function AgentConfigForm({
           </div>
 
           {/* 偏好题材 */}
-          <div className="bg-surface-50 rounded-lg p-4">
+          <div className="bg-surface-50 dark:bg-surface-800 rounded-lg p-4">
             <div className="flex items-center gap-2 mb-3">
               <BookOpen className="w-4 h-4 text-primary-600" />
               <h3 className="font-medium">偏好题材</h3>
             </div>
-            <label className="block text-sm text-gray-600 mb-2">
+            <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">
               偏好题材（可多选）
             </label>
             <div className="flex flex-wrap gap-2">
@@ -442,7 +442,7 @@ export function AgentConfigForm({
                     'px-3 py-1 rounded-full text-sm transition-all',
                     authorConfig.preferredGenres.includes(genre)
                       ? 'bg-primary-600 text-white'
-                      : 'bg-white text-surface-600 hover:bg-surface-200 border border-surface-200'
+                      : 'bg-white dark:bg-gray-700 text-surface-600 dark:text-surface-400 hover:bg-surface-200 dark:hover:bg-surface-600 border border-surface-200 dark:border-surface-600'
                   )}
                 >
                   {genre}
@@ -452,7 +452,7 @@ export function AgentConfigForm({
           </div>
 
           {/* 创作风格 */}
-          <div className="bg-surface-50 rounded-lg p-4">
+          <div className="bg-surface-50 dark:bg-surface-800 rounded-lg p-4">
             <div className="flex items-center gap-2 mb-3">
               <BookOpen className="w-4 h-4 text-primary-600" />
               <h3 className="font-medium">创作风格</h3>
@@ -472,7 +472,7 @@ export function AgentConfigForm({
                     'py-3 border rounded-lg text-sm transition-all',
                     authorConfig.writingLengthPreference === option.value
                       ? 'border-primary-500 bg-primary-50 text-primary-700'
-                      : 'border-surface-200 hover:border-surface-300 bg-white'
+                      : 'border-surface-200 dark:border-surface-600 hover:border-surface-300 dark:hover:border-surface-500 bg-white dark:bg-gray-700'
                   )}
                 >
                   {option.label}
@@ -482,7 +482,7 @@ export function AgentConfigForm({
           </div>
 
           {/* 每章目标字数 */}
-          <div className="bg-surface-50 rounded-lg p-4">
+          <div className="bg-surface-50 dark:bg-surface-800 rounded-lg p-4">
             <div className="flex items-center gap-2 mb-3">
               <Pen className="w-4 h-4 text-primary-600" />
               <h3 className="font-medium">每章目标字数</h3>
@@ -502,7 +502,7 @@ export function AgentConfigForm({
                     'py-2 border rounded-lg text-sm transition-all',
                     authorConfig.wordCountTarget === option.value
                       ? 'border-primary-500 bg-primary-50 text-primary-700'
-                      : 'border-surface-200 hover:border-surface-300 bg-white'
+                      : 'border-surface-200 dark:border-surface-600 hover:border-surface-300 dark:hover:border-surface-500 bg-white dark:bg-gray-700'
                   )}
                 >
                   {option.label}
@@ -517,7 +517,7 @@ export function AgentConfigForm({
       {activeTab === 'reader' && (
         <div className="space-y-6">
           {/* 性格描述 */}
-          <div className="bg-surface-50 rounded-lg p-4">
+          <div className="bg-surface-50 dark:bg-surface-800 rounded-lg p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <BookOpen className="w-4 h-4 text-primary-600" />
@@ -535,7 +535,7 @@ export function AgentConfigForm({
                 从 SecondMe 导入
               </Button>
             </div>
-            <p className="text-xs text-gray-500 mb-3">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
               选择或输入你的性格特点，点击选项可直接填入
             </p>
             {/* 预设选项 */}
@@ -554,7 +554,7 @@ export function AgentConfigForm({
                     'px-3 py-1.5 rounded-full text-sm transition-all',
                     readerConfig.readerPersonality === item.value
                       ? 'bg-primary-600 text-white'
-                      : 'bg-white text-surface-600 hover:bg-surface-200 border border-surface-200'
+                      : 'bg-white dark:bg-gray-700 text-surface-600 dark:text-surface-400 hover:bg-surface-200 dark:hover:bg-surface-600 border border-surface-200 dark:border-surface-600'
                   )}
                 >
                   {item.label}
@@ -577,7 +577,7 @@ export function AgentConfigForm({
           </div>
 
           {/* 阅读偏好 */}
-          <div className="bg-surface-50 rounded-lg p-4">
+          <div className="bg-surface-50 dark:bg-surface-800 rounded-lg p-4">
             <div className="flex items-center gap-2 mb-3">
               <Eye className="w-4 h-4 text-primary-600" />
               <h3 className="font-medium">阅读偏好</h3>
@@ -585,7 +585,7 @@ export function AgentConfigForm({
 
             {/* 偏好题材 */}
             <div className="mb-4">
-              <label className="block text-sm text-gray-600 mb-2">
+              <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">
                 偏好题材（可多选）
               </label>
               <div className="flex flex-wrap gap-2">
@@ -619,7 +619,7 @@ export function AgentConfigForm({
                         genre
                       )
                         ? 'bg-primary-600 text-white'
-                        : 'bg-white text-surface-600 hover:bg-surface-200 border border-surface-200'
+                        : 'bg-white dark:bg-gray-700 text-surface-600 dark:text-surface-400 hover:bg-surface-200 dark:hover:bg-surface-600 border border-surface-200 dark:border-surface-600'
                     )}
                   >
                     {genre}
@@ -630,7 +630,7 @@ export function AgentConfigForm({
 
             {/* 评价侧重点 */}
             <div className="mb-4">
-              <label className="block text-sm text-gray-600 mb-2">
+              <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">
                 评价侧重点（可多选）
               </label>
               <div className="flex flex-wrap gap-2">
@@ -657,7 +657,7 @@ export function AgentConfigForm({
                       'px-3 py-1 rounded-full text-sm transition-all',
                       (readerConfig.readingPreferences.commentFocus || ['综合']).includes(option.value)
                         ? 'bg-primary-600 text-white'
-                        : 'bg-white text-surface-600 hover:bg-surface-200 border border-surface-200'
+                        : 'bg-white dark:bg-gray-700 text-surface-600 dark:text-surface-400 hover:bg-surface-200 dark:hover:bg-surface-600 border border-surface-200 dark:border-surface-600'
                     )}
                   >
                     {option.label}
@@ -671,7 +671,7 @@ export function AgentConfigForm({
 
             {/* 最低评分阈值 */}
             <div className="mb-4">
-              <label className="block text-sm text-gray-600 mb-2">
+              <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">
                 最低评分阈值：{readerConfig.readingPreferences.minRatingThreshold.toFixed(1)} 分
               </label>
               <input
@@ -699,7 +699,7 @@ export function AgentConfigForm({
           </div>
 
           {/* 评论行为 */}
-          <div className="bg-surface-50 rounded-lg p-4">
+          <div className="bg-surface-50 dark:bg-surface-800 rounded-lg p-4">
             <div className="flex items-center gap-2 mb-3">
               <MessageCircle className="w-4 h-4 text-primary-600" />
               <h3 className="font-medium">评论行为</h3>
@@ -708,7 +708,7 @@ export function AgentConfigForm({
             {/* 是否开启评论 */}
             <div className="mb-4">
               <label className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">是否开启评论</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">是否开启评论</span>
                 <button
                   type="button"
                   onClick={() =>
@@ -741,7 +741,7 @@ export function AgentConfigForm({
 
             {/* 评论概率 */}
             <div className="mb-4">
-              <label className="block text-sm text-gray-600 mb-2">
+              <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">
                 评论概率：{(readerConfig.commentingBehavior.commentProbability * 100).toFixed(0)}%
               </label>
               <input
@@ -770,7 +770,7 @@ export function AgentConfigForm({
 
             {/* 触发评论的评分阈值 */}
             <div>
-              <label className="block text-sm text-gray-600 mb-2">
+              <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">
                 触发评论的评分阈值：{readerConfig.commentingBehavior.ratingThreshold.toFixed(0)} 分
               </label>
               <input
@@ -799,7 +799,7 @@ export function AgentConfigForm({
           </div>
 
           {/* 互动行为 */}
-          <div className="bg-surface-50 rounded-lg p-4">
+          <div className="bg-surface-50 dark:bg-surface-800 rounded-lg p-4">
             <div className="flex items-center gap-2 mb-3">
               <Gift className="w-4 h-4 text-primary-600" />
               <h3 className="font-medium">互动行为</h3>
@@ -810,7 +810,7 @@ export function AgentConfigForm({
               <label className="flex items-center justify-between py-2">
                 <div className="flex items-center gap-2">
                   <Star className="w-4 h-4 text-orange-500" />
-                  <span className="text-sm text-gray-600">是否催更</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">是否催更</span>
                 </div>
                 <button
                   type="button"
@@ -847,7 +847,7 @@ export function AgentConfigForm({
               <label className="flex items-center justify-between py-2">
                 <div className="flex items-center gap-2">
                   <Gift className="w-4 h-4 text-red-500" />
-                  <span className="text-sm text-gray-600">是否打赏</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">是否打赏</span>
                 </div>
                 <button
                   type="button"

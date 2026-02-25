@@ -109,12 +109,12 @@ function getPhaseDisplayName(phase: string): string {
 // 状态显示
 function getStatusBadge(status: string) {
   const styles: Record<string, string> = {
-    ACTIVE: 'bg-green-100 text-green-700',
-    FINISHED: 'bg-gray-100 text-gray-700',
-    DRAFT: 'bg-yellow-100 text-yellow-700',
-    SCHEDULED: 'bg-blue-100 text-blue-700',
-    PUBLISHED: 'bg-green-100 text-green-700',
-    SKIPPED: 'bg-red-100 text-red-700',
+    ACTIVE: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+    FINISHED: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
+    DRAFT: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
+    SCHEDULED: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+    PUBLISHED: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+    SKIPPED: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
   };
   const labels: Record<string, string> = {
     ACTIVE: '进行中',
@@ -125,7 +125,7 @@ function getStatusBadge(status: string) {
     SKIPPED: '已跳过',
   };
   return (
-    <span className={`px-2 py-0.5 text-xs rounded-full ${styles[status] || 'bg-gray-100'}`}>
+    <span className={`px-2 py-0.5 text-xs rounded-full ${styles[status] || 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'}`}>
       {labels[status] || status}
     </span>
   );
@@ -682,8 +682,8 @@ export function AdminSeasonClient({
             onClick={() => setActiveTab('queue')}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'queue'
-                ? 'border-purple-500 text-purple-600'
-                : 'border-transparent text-surface-600 hover:text-surface-900'
+                ? 'border-purple-500 text-purple-600 dark:text-purple-400'
+                : 'border-transparent text-surface-600 dark:text-surface-400 hover:text-surface-900 dark:hover:text-surface-100'
             }`}
           >
             赛季队列管理
@@ -692,8 +692,8 @@ export function AdminSeasonClient({
             onClick={() => { resetForm(); setActiveTab('immediate'); }}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'immediate'
-                ? 'border-purple-500 text-purple-600'
-                : 'border-transparent text-surface-600 hover:text-surface-900'
+                ? 'border-purple-500 text-purple-600 dark:text-purple-400'
+                : 'border-transparent text-surface-600 dark:text-surface-400 hover:text-surface-900 dark:hover:text-surface-100'
             }`}
           >
             立即创建赛季
@@ -702,8 +702,8 @@ export function AdminSeasonClient({
             onClick={() => setActiveTab('history')}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'history'
-                ? 'border-purple-500 text-purple-600'
-                : 'border-transparent text-surface-600 hover:text-surface-900'
+                ? 'border-purple-500 text-purple-600 dark:text-purple-400'
+                : 'border-transparent text-surface-600 dark:text-surface-400 hover:text-surface-900 dark:hover:text-surface-100'
             }`}
           >
             历史赛季 ({allSeasons?.length || 0})
@@ -712,8 +712,8 @@ export function AdminSeasonClient({
             onClick={() => setActiveTab('delete')}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'delete'
-                ? 'border-red-500 text-red-600'
-                : 'border-transparent text-surface-600 hover:text-surface-900'
+                ? 'border-red-500 text-red-600 dark:text-red-400'
+                : 'border-transparent text-surface-600 dark:text-surface-400 hover:text-surface-900 dark:hover:text-surface-100'
             }`}
           >
             删除赛季
@@ -959,10 +959,10 @@ export function AdminSeasonClient({
             {queueLoading ? (
               <div className="text-center py-8">
                 <Spinner className="w-6 h-6 mx-auto" />
-                <p className="text-sm text-surface-500 mt-2">加载中...</p>
+                <p className="text-sm text-surface-500 dark:text-surface-400 mt-2">加载中...</p>
               </div>
             ) : seasonQueue.length === 0 ? (
-              <div className="text-center py-8 text-surface-500">
+              <div className="text-center py-8 text-surface-500 dark:text-surface-400">
                 <Calendar className="w-8 h-8 mx-auto mb-2 opacity-50" />
                 <p>队列为空，点击上方添加赛季</p>
               </div>
@@ -983,7 +983,7 @@ export function AdminSeasonClient({
                             <Sparkles className="w-4 h-4 text-amber-500" />
                           )}
                         </div>
-                        <div className="text-xs text-surface-500 dark:text-surface-400 space-y-1">
+                        <div className="text-xs text-surface-500 dark:text-surface-400 dark:text-surface-400 space-y-1">
                           <div>
                             约束：{Array.isArray(item.constraints) && item.constraints.length > 0 ? item.constraints.slice(0, 2).join('；') : '无'}
                             {Array.isArray(item.constraints) && item.constraints.length > 2 && ` 等${item.constraints.length}条`}
@@ -1255,34 +1255,34 @@ export function AdminSeasonClient({
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div>
-                      <div className="text-surface-500 dark:text-surface-400">开始时间</div>
+                      <div className="text-surface-500 dark:text-surface-400 dark:text-surface-400">开始时间</div>
                       <div className="font-medium">
                         {s.startTime ? new Date(s.startTime).toLocaleString('zh-CN') : '-'}
                       </div>
                     </div>
                     <div>
-                      <div className="text-surface-500 dark:text-surface-400">结束时间</div>
+                      <div className="text-surface-500 dark:text-surface-400 dark:text-surface-400">结束时间</div>
                       <div className="font-medium">
                         {s.endTime ? new Date(s.endTime).toLocaleString('zh-CN') : '-'}
                       </div>
                     </div>
                     <div>
-                      <div className="text-surface-500 dark:text-surface-400">参赛书籍</div>
+                      <div className="text-surface-500 dark:text-surface-400 dark:text-surface-400">参赛书籍</div>
                       <div className="font-medium">{s.participantCount} 本</div>
                     </div>
                     <div>
-                      <div className="text-surface-500 dark:text-surface-400">最大章节</div>
+                      <div className="text-surface-500 dark:text-surface-400 dark:text-surface-400">最大章节</div>
                       <div className="font-medium">{s.maxChapters} 章</div>
                     </div>
                   </div>
 
                   <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div>
-                      <div className="text-surface-500 dark:text-surface-400">轮次时长</div>
+                      <div className="text-surface-500 dark:text-surface-400 dark:text-surface-400">轮次时长</div>
                       <div className="font-medium">{s.roundDuration || 20} 分钟</div>
                     </div>
                     <div>
-                      <div className="text-surface-500 dark:text-surface-400">当前状态</div>
+                      <div className="text-surface-500 dark:text-surface-400 dark:text-surface-400">当前状态</div>
                       <div className="font-medium">
                         {s.status === 'ACTIVE'
                           ? `第 ${s.currentRound} 轮 - ${getPhaseDisplayName(s.roundPhase)}`
@@ -1293,10 +1293,10 @@ export function AdminSeasonClient({
 
                   {/* 约束和分区 */}
                   <div className="mt-3 text-sm">
-                    <div className="text-surface-500 dark:text-surface-400 mb-1">
+                    <div className="text-surface-500 dark:text-surface-400 dark:text-surface-400 mb-1">
                       约束: {Array.isArray(s.constraints) && s.constraints.length > 0 ? s.constraints.join('；') : '无'}
                     </div>
-                    <div className="text-surface-500 dark:text-surface-400">
+                    <div className="text-surface-500 dark:text-surface-400 dark:text-surface-400">
                       分区: {Array.isArray(s.zoneStyles) ? s.zoneStyles.map(z => ZONE_LABELS[z] || z).join('、') : '无'}
                     </div>
                   </div>
@@ -1304,7 +1304,7 @@ export function AdminSeasonClient({
                   {/* 奖励 */}
                   {s.rewards && Object.keys(s.rewards).length > 0 && (
                     <div className="mt-3 text-sm">
-                      <div className="text-surface-500 dark:text-surface-400">奖励:</div>
+                      <div className="text-surface-500 dark:text-surface-400 dark:text-surface-400">奖励:</div>
                       <div className="flex gap-3 mt-1">
                         {s.rewards.first && <span className="text-yellow-600">🥇 {s.rewards.first} Ink</span>}
                         {s.rewards.second && <span className="text-gray-500">🥈 {s.rewards.second} Ink</span>}
@@ -1323,7 +1323,7 @@ export function AdminSeasonClient({
                       {leaderboardData[s.id]?.loading ? (
                         <div className="text-center py-4">
                           <Spinner className="w-6 h-6 mx-auto" />
-                          <p className="text-sm text-surface-500 mt-2">加载中...</p>
+                          <p className="text-sm text-surface-500 dark:text-surface-400 mt-2">加载中...</p>
                         </div>
                       ) : leaderboardData[s.id]?.books && leaderboardData[s.id]!.books.length > 0 ? (
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
@@ -1349,7 +1349,7 @@ export function AdminSeasonClient({
                           ))}
                         </div>
                       ) : (
-                        <div className="text-center py-4 text-surface-500">
+                        <div className="text-center py-4 text-surface-500 dark:text-surface-400">
                           暂无书籍数据
                         </div>
                       )}
@@ -1359,7 +1359,7 @@ export function AdminSeasonClient({
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-surface-500">
+            <div className="text-center py-8 text-surface-500 dark:text-surface-400">
               暂无历史赛季
             </div>
           )}
@@ -1394,7 +1394,7 @@ export function AdminSeasonClient({
                         <span className="font-semibold">{s.themeKeyword}</span>
                         {getStatusBadge(s.status)}
                       </div>
-                      <div className="text-sm text-surface-500">
+                      <div className="text-sm text-surface-500 dark:text-surface-400">
                         {s.participantCount} 本书籍 · {s.startTime ? new Date(s.startTime).toLocaleDateString('zh-CN') : '-'}
                       </div>
                     </div>
@@ -1421,7 +1421,7 @@ export function AdminSeasonClient({
                 ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-surface-500">
+            <div className="text-center py-8 text-surface-500 dark:text-surface-400">
               暂无可删除的赛季
             </div>
           )}

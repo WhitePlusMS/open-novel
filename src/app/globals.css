@@ -202,6 +202,29 @@
   --tw-gradient-from: #1f1f1f !important;
 }
 
+/* 阅读器背景 - 使用 CSS 变量 */
+.dark [style*="--color-reader-bg"] {
+  background-color: #1a1a1a !important;
+}
+
+/* 硬编码的阅读器背景颜色 */
+.dark .bg-\[\#f5f5dc\] {
+  background-color: #1a1a1a !important;
+}
+
+.dark .bg-\[ \#f5f5dc\] {
+  background-color: #1a1a1a !important;
+}
+
+/* Hover 背景覆盖 */
+.dark .hover\:bg-gray-50:hover {
+  background-color: #262626 !important;
+}
+
+.dark .hover\:bg-gray-100:hover {
+  background-color: #333333 !important;
+}
+
 /* 背景透明度覆盖 */
 .dark .bg-black\/50 {
   background-color: rgba(0, 0, 0, 0.6) !important;

@@ -31,16 +31,16 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
   // 书籍存在但没有章节，或章节不存在
   if (!chapter) {
     return (
-      <div className="min-h-screen bg-[#f5f5dc]">
+      <div className="min-h-screen bg-[var(--color-reader-bg)] dark:bg-[var(--color-reader-bg)]">
         {/* Header */}
-        <header className="sticky top-0 bg-[#f5f5dc]/90 backdrop-blur-sm z-10">
+        <header className="sticky top-0 bg-[var(--color-reader-bg)] dark:bg-[var(--color-reader-bg)]/90 backdrop-blur-sm z-10">
           <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
-            <Link href={`/book/${params.id}`} className="text-surface-700">
+            <Link href={`/book/${params.id}`} className="text-surface-700 dark:text-surface-300">
               <ArrowLeft className="w-6 h-6" />
             </Link>
             <Link
               href={`/book/${params.id}`}
-              className="flex-1 truncate text-sm text-surface-600 hover:text-surface-800"
+              className="flex-1 truncate text-sm text-surface-600 dark:text-surface-400 hover:text-surface-800 dark:hover:text-surface-200"
             >
               <BookOpen className="w-4 h-4 inline mr-1" />
               {book.title}
@@ -78,16 +78,16 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
   });
 
   return (
-    <div className="min-h-screen bg-[#f5f5dc]">
+    <div className="min-h-screen bg-[var(--color-reader-bg)] dark:bg-[var(--color-reader-bg)]">
       {/* Header */}
-      <header className="sticky top-0 bg-[#f5f5dc]/90 backdrop-blur-sm z-10">
+      <header className="sticky top-0 bg-[var(--color-reader-bg)] dark:bg-[var(--color-reader-bg)]/90 backdrop-blur-sm z-10">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
-          <Link href={`/book/${params.id}`} className="text-surface-700">
+          <Link href={`/book/${params.id}`} className="text-surface-700 dark:text-surface-300">
             <ArrowLeft className="w-6 h-6" />
           </Link>
           <Link
             href={`/book/${params.id}`}
-            className="flex-1 truncate text-sm text-surface-600 hover:text-surface-800"
+            className="flex-1 truncate text-sm text-surface-600 dark:text-surface-400 hover:text-surface-800 dark:hover:text-surface-200"
           >
             <BookOpen className="w-4 h-4 inline mr-1" />
             {book.title}
@@ -117,7 +117,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
       <div id="comments" className="max-w-2xl mx-auto px-4 py-6 border-t border-surface-200">
         <div className="flex items-center gap-2 mb-4">
           <MessageCircle className="w-5 h-5 text-surface-500" />
-          <h3 className="font-medium text-surface-700">本章评论</h3>
+          <h3 className="font-medium text-surface-700 dark:text-surface-300">本章评论</h3>
         </div>
         <CommentList bookId={params.id} chapterId={chapter.id} />
       </div>

@@ -20,11 +20,11 @@ export default async function CreatePage() {
     : null;
 
   return (
-    <div className="min-h-screen bg-surface-50">
+    <div className="min-h-screen bg-surface-50 dark:bg-surface-900">
       <main className="mx-auto w-full px-4 sm:px-6 lg:px-8 xl:px-16 2xl:px-24">
         <div className="mx-auto max-w-screen-xl py-4">
         {/* 页面标题 */}
-        <h1 className="text-xl font-bold mb-4 text-gray-900">参赛创作</h1>
+        <h1 className="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">参赛创作</h1>
 
         {/* 赛季信息 */}
         {currentSeason && (
@@ -34,7 +34,7 @@ export default async function CreatePage() {
         )}
 
         {/* 参赛区域 */}
-        <div className="bg-white rounded-lg shadow-sm p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
           {currentSeason ? (
             agentConfig ? (
               // 有 agent 配置，显示参赛按钮
@@ -71,7 +71,7 @@ export default async function CreatePage() {
               <div className="w-16 h-16 bg-surface-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <CalendarX className="w-8 h-8 text-surface-400" />
               </div>
-              <h3 className="font-medium text-gray-900 mb-2">暂无进行中的赛季</h3>
+              <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-2">暂无进行中的赛季</h3>
               <p className="text-surface-500 text-sm mb-4">
                 请等待赛季开启后参赛
               </p>
