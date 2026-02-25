@@ -20,11 +20,11 @@ interface AgentConfig {
 
   // 写作偏好
   writingStyle: string;      // 写作风格：严肃/幽默/浪漫/悬疑/多变
+  writingLengthPreference: 'short' | 'medium' | 'long';
 
   // 创作参数
   adaptability: number;     // 听劝指数：0-1
   preferredGenres: string[]; // 偏好题材：['都市', '玄幻', '科幻', ...]
-  maxChapters: number;     // 创作风格：3=短篇, 5=中篇, 7=长篇
   wordCountTarget: number;  // 每章目标字数：1000/2000/3000
 }
 
@@ -392,17 +392,15 @@ export class OutlineGenerationService {
     const agentConfig: AgentConfig = {
       writerPersonality: (rawConfig.writerPersonality as string) || '',
       writingStyle: (rawConfig.writingStyle as string) || '多变',
+      writingLengthPreference: (rawConfig.writingLengthPreference as 'short' | 'medium' | 'long') || 'medium',
       adaptability: (rawConfig.adaptability as number) ?? 0.5,
       preferredGenres: (rawConfig.preferredGenres as string[]) || [],
-      maxChapters: (rawConfig.maxChapters as number) || 5,
       wordCountTarget: (rawConfig.wordCountTarget as number) || 2000,
     };
 
-    const userPreferredChapters = agentConfig.maxChapters || 5;
-
-    const chapterPreferenceText = userPreferredChapters <= 3
+    const chapterPreferenceText = agentConfig.writingLengthPreference === 'short'
       ? '短篇小说风格（精简干练，节奏快）'
-      : userPreferredChapters >= 7
+      : agentConfig.writingLengthPreference === 'long'
         ? '长篇小说风格（宏大叙事，细节丰富）'
         : '中篇小说风格（平衡适当，详略得当）';
 
@@ -504,6 +502,7 @@ export class OutlineGenerationService {
           originalIntent: job.outlineData.summary,
           chaptersPlan: toJsonValue(chapters),
           characters: toJsonValue(characters),
+          plannedChapters: chapters.length,
         },
       });
 
@@ -591,19 +590,17 @@ export class OutlineGenerationService {
 
     console.log(`[Outline] 书籍《${snapshot.bookTitle}》当前 ${snapshot.currentChapterCount} 章，目标轮次 ${targetRound ?? '未指定'}，生成第 ${snapshot.nextChapterNumber} 章大纲`);
 
-    const agentConfig: AgentConfig = snapshot.authorAgentConfig as unknown as AgentConfig;
-    const maxChapters = agentConfig.maxChapters || 5;
-    if (snapshot.nextChapterNumber > maxChapters) {
-      console.log(`[Outline] 书籍《${snapshot.bookTitle}》已完成所有 ${maxChapters} 章，跳过大纲生成`);
-      return null;
-    }
-
     if (!snapshot.chaptersPlan) {
       await this.generateOutline(bookId);
       return null;
     }
 
     const chaptersPlan = snapshot.chaptersPlan;
+    if (snapshot.nextChapterNumber > chaptersPlan.length) {
+      console.log(`[Outline] 书籍《${snapshot.bookTitle}》已完成所有 ${chaptersPlan.length} 章，跳过大纲生成`);
+      return null;
+    }
+    const agentConfig: AgentConfig = snapshot.authorAgentConfig as unknown as AgentConfig;
     const existingChapterOutline = chaptersPlan.find((c) => c.number === snapshot.nextChapterNumber);
     if (existingChapterOutline && !testMode) {
       console.log(`[Outline] 第 ${snapshot.nextChapterNumber} 章大纲已存在`);
@@ -801,6 +798,7 @@ export class OutlineGenerationService {
       where: { id: bookId },
       data: {
         chaptersPlan: toJsonValue(finalChapters),
+        plannedChapters: finalChapters.length,
       },
     });
     console.log(`[Outline] 书籍《${book.title}》第 ${nextChapterNumber} 章大纲生成完成`);

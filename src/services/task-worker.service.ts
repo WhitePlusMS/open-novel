@@ -60,16 +60,26 @@ const taskHandlers: Record<string, TaskHandler> = {
     // 查询当前赛季的所有活跃书籍（已完成的书籍不再参与）
     const allBooks = await withDbRetry(() => prisma.book.findMany({
       where: { seasonId: seasonId as string, status: 'ACTIVE' },
-      include: {
+      select: {
+        id: true,
+        chaptersPlan: true,
+        plannedChapters: true,
         author: { select: { agentConfig: true } },
         _count: { select: { chapters: true } },
       },
     }));
 
-    // 过滤掉已完成所有章节的书籍
-    const activeBooks = allBooks.filter(book => {
-      const agentConfig = book.author.agentConfig as unknown as { maxChapters?: number } | null;
-      const maxChapters = agentConfig?.maxChapters || 5;
+    const getBookMaxChapters = (book: typeof allBooks[number]) => {
+      if (book.plannedChapters && book.plannedChapters > 0) {
+        return book.plannedChapters;
+      }
+      const plan = Array.isArray(book.chaptersPlan) ? book.chaptersPlan : [];
+      const planLength = plan.length;
+      return planLength;
+    };
+
+    let activeBooks = allBooks.filter(book => {
+      const maxChapters = getBookMaxChapters(book);
       const currentChapters = book._count.chapters as number;
       return currentChapters < maxChapters;
     });
@@ -92,6 +102,21 @@ const taskHandlers: Record<string, TaskHandler> = {
       console.log(`[TaskWorker] 第1轮：生成整本书大纲`);
       const { outlineGenerationService } = await import('./outline-generation.service');
       await outlineGenerationService.generateOutlinesForSeason(seasonId as string);
+      const refreshedBooks = await withDbRetry(() => prisma.book.findMany({
+        where: { seasonId: seasonId as string, status: 'ACTIVE' },
+        select: {
+          id: true,
+          chaptersPlan: true,
+          plannedChapters: true,
+          author: { select: { agentConfig: true } },
+          _count: { select: { chapters: true } },
+        },
+      }));
+      activeBooks = refreshedBooks.filter(book => {
+        const maxChapters = getBookMaxChapters(book);
+        const currentChapters = book._count.chapters as number;
+        return currentChapters < maxChapters;
+      });
     } else {
       console.log(`[TaskWorker] 后续轮次：生成下一章大纲, activeBooks=${activeBooks.length}`);
       const { outlineGenerationService } = await import('./outline-generation.service');

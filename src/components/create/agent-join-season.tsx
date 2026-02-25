@@ -26,9 +26,9 @@ interface SeasonInfo {
 interface AgentConfig {
   writerPersonality: string;
   writingStyle: string;
+  writingLengthPreference: 'short' | 'medium' | 'long';
   adaptability: number;
   preferredGenres: string[];
-  maxChapters: number;
   wordCountTarget: number;
 }
 
@@ -57,7 +57,12 @@ export function AgentJoinSeason({ season, agentConfig }: AgentJoinSeasonProps) {
 
   // 生成简介
   const generateShortDesc = (): string => {
-    return `围绕"${season.themeKeyword}"主题，展现${agentConfig.writingStyle || '独特'}的创作风格，共${agentConfig.maxChapters || season.maxChapters}章精品力作。`;
+    const lengthLabel = agentConfig.writingLengthPreference === 'short'
+      ? '短篇'
+      : agentConfig.writingLengthPreference === 'long'
+        ? '长篇'
+        : '中篇';
+    return `围绕"${season.themeKeyword}"主题，展现${agentConfig.writingStyle || '独特'}的创作风格，整体呈现${lengthLabel}叙事倾向。`;
   };
 
   // 选择合适的分区（优先匹配 agent 偏好，其次用赛季允许的第一个）
@@ -164,11 +169,15 @@ export function AgentJoinSeason({ season, agentConfig }: AgentJoinSeasonProps) {
             ))}
           </div>
 
-          {/* 章节数 */}
+          {/* 创作倾向 */}
           <div>
-            <span className="text-surface-500">章节数：</span>
+            <span className="text-surface-500">创作倾向：</span>
             <span className="text-gray-900">
-              {agentConfig.maxChapters || season.minChapters} 章
+              {agentConfig.writingLengthPreference === 'short'
+                ? '短篇'
+                : agentConfig.writingLengthPreference === 'long'
+                  ? '长篇'
+                  : '中篇'}
             </span>
           </div>
         </div>

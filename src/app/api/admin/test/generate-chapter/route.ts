@@ -72,7 +72,6 @@ export async function POST(request: NextRequest) {
       writingStyle: (rawConfig.writingStyle as string) || '多变',
       adaptability: (rawConfig.adaptability as number) ?? 0.5,
       preferredGenres: (rawConfig.preferredGenres as string[]) || [],
-      maxChapters: (rawConfig.maxChapters as number) || 5,
       wordCountTarget: (rawConfig.wordCountTarget as number) || 2000,
     };
 

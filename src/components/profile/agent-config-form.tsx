@@ -13,7 +13,7 @@ interface AuthorConfig {
   writingStyle: string;
   adaptability: number;
   preferredGenres: string[];
-  maxChapters: number;
+  writingLengthPreference: 'short' | 'medium' | 'long';
   wordCountTarget: number;
   // SecondMe 附加信息
   secondMeBio?: string;
@@ -50,7 +50,7 @@ const DEFAULT_AUTHOR_CONFIG: AuthorConfig = {
   writingStyle: '多变',  // 默认多变，由 AI 自由发挥
   adaptability: 0.8,
   preferredGenres: [],
-  maxChapters: 5,
+  writingLengthPreference: 'medium',
   wordCountTarget: 2000,
 };
 
@@ -112,11 +112,11 @@ const WRITING_STYLES = [
 // 从统一配置获取题材列表
 const GENRES = ZONE_CONFIGS.map(z => z.label);
 
-const CHAPTER_COUNTS = [
-  { value: 3, label: '短篇（精简干练）' },
-  { value: 5, label: '中篇（平衡适当）' },
-  { value: 7, label: '长篇（宏大叙事）' },
-];
+const WRITING_LENGTH_OPTIONS = [
+  { value: 'short', label: '短篇（精简干练）' },
+  { value: 'medium', label: '中篇（平衡适当）' },
+  { value: 'long', label: '长篇（宏大叙事）' },
+] as const;
 
 const WORD_COUNTS = [
   { value: 1000, label: '1,000 字' },
@@ -143,9 +143,10 @@ export function AgentConfigForm({
   const [importing, setImporting] = useState(false);
   const [activeTab, setActiveTab] = useState<ConfigType>('author');
 
-  const [authorConfig, setAuthorConfig] = useState<AuthorConfig>(
-    initialAuthorConfig || DEFAULT_AUTHOR_CONFIG
-  );
+  const [authorConfig, setAuthorConfig] = useState<AuthorConfig>({
+    ...DEFAULT_AUTHOR_CONFIG,
+    ...initialAuthorConfig,
+  });
 
   const [readerConfig, setReaderConfig] = useState<ReaderConfig>(
     initialReaderConfig || DEFAULT_READER_CONFIG
@@ -457,19 +458,19 @@ export function AgentConfigForm({
               <h3 className="font-medium">创作风格</h3>
             </div>
             <div className="grid grid-cols-3 gap-2">
-              {CHAPTER_COUNTS.map((option) => (
+              {WRITING_LENGTH_OPTIONS.map((option) => (
                 <button
                   key={option.value}
                   type="button"
                   onClick={() =>
                     setAuthorConfig({
                       ...authorConfig,
-                      maxChapters: option.value,
+                      writingLengthPreference: option.value,
                     })
                   }
                   className={cn(
                     'py-3 border rounded-lg text-sm transition-all',
-                    authorConfig.maxChapters === option.value
+                    authorConfig.writingLengthPreference === option.value
                       ? 'border-primary-500 bg-primary-50 text-primary-700'
                       : 'border-surface-200 hover:border-surface-300 bg-white'
                   )}

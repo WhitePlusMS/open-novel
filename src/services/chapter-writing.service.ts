@@ -12,6 +12,7 @@ import { parseChapterWithRetry } from '@/lib/utils/llm-parser';
 import { readerAgentService } from './reader-agent.service';
 import { wsEvents } from '@/lib/websocket/events';
 import { outlineGenerationService } from './outline-generation.service';
+import { taskQueueService } from './task-queue.service';
 import { buildRoundGapsFromBooks } from '@/lib/utils/round-gap';
 
 // Agent 配置接口
@@ -23,11 +24,11 @@ interface AgentConfig {
 
   // 写作偏好
   writingStyle: string;      // 写作风格
+  writingLengthPreference: 'short' | 'medium' | 'long';
 
   // 创作参数
   adaptability: number;     // 听劝指数
   preferredGenres: string[]; // 偏好题材
-  maxChapters: number;     // 创作风格
   wordCountTarget: number; // 每章目标字数
 }
 
@@ -60,6 +61,7 @@ interface ChapterReadSnapshot {
   authorNickname: string;
   authorAgentConfig: Record<string, unknown>;
   zoneStyle: string;
+  plannedChapters: number | null;
   chapterNumber: number;
   chapterOutlineTitle: string;
   chapterOutlineSummary: string;
@@ -161,6 +163,7 @@ export class ChapterWritingService {
         id: true,
         title: true,
         zoneStyle: true,
+        plannedChapters: true,
         chaptersPlan: true,
         author: { select: { id: true, nickname: true, agentConfig: true } },
         _count: { select: { chapters: true } },
@@ -250,6 +253,7 @@ export class ChapterWritingService {
         authorNickname: book.author.nickname || '作家',
         authorAgentConfig: book.author.agentConfig as unknown as Record<string, unknown>,
         zoneStyle: book.zoneStyle,
+        plannedChapters: book.plannedChapters ?? null,
         chapterNumber,
         chapterOutlineTitle: chapterOutline.title,
         chapterOutlineSummary: chapterOutline.summary,
@@ -272,9 +276,9 @@ export class ChapterWritingService {
     const agentConfig: AgentConfig = {
       writerPersonality: (rawConfig.writerPersonality as string) || '',
       writingStyle: (rawConfig.writingStyle as string) || '多变',
+      writingLengthPreference: (rawConfig.writingLengthPreference as 'short' | 'medium' | 'long') || 'medium',
       adaptability: (rawConfig.adaptability as number) ?? 0.5,
       preferredGenres: (rawConfig.preferredGenres as string[]) || [],
-      maxChapters: (rawConfig.maxChapters as number) || 5,
       wordCountTarget: (rawConfig.wordCountTarget as number) || 2000,
       selfIntro: (rawConfig.selfIntro as string) || '',
     };
@@ -291,6 +295,14 @@ export class ChapterWritingService {
       wordCountTarget: agentConfig.wordCountTarget || 2000,
     });
 
+    const outlineLength = snapshot.plannedChapters && snapshot.plannedChapters > 0
+      ? snapshot.plannedChapters
+      : snapshot.chaptersPlan.length;
+    if (outlineLength <= 0) {
+      throw new Error('缺少大纲章节数，无法生成章节');
+    }
+    const bookMaxChapters = outlineLength;
+
     const chapterPrompt = buildChapterPrompt({
       writerPersonality: agentConfig.writerPersonality || '',
       selfIntro: agentConfig.selfIntro || '',
@@ -298,7 +310,7 @@ export class ChapterWritingService {
       wordCountTarget: agentConfig.wordCountTarget || 2000,
       bookTitle: snapshot.bookTitle,
       chapterNumber: snapshot.chapterNumber,
-      totalChapters: snapshot.chaptersPlan.length,
+      totalChapters: outlineLength,
       outline: {
         summary: snapshot.chapterOutlineSummary,
         key_events: snapshot.chapterOutlineKeyEvents,
@@ -319,7 +331,7 @@ export class ChapterWritingService {
       chapterOutlineTitle: snapshot.chapterOutlineTitle,
       systemPrompt,
       chapterPrompt,
-      bookMaxChapters: agentConfig.maxChapters || 5,
+      bookMaxChapters,
     };
   }
 
@@ -395,8 +407,32 @@ export class ChapterWritingService {
 
     console.log(`[Chapter] 章节发布完成: bookId=${prepared.bookId}, chapter=${prepared.chapterNumber}, title=${chapterData.title}, contentLength=${chapterData.content.length}`);
 
-    // 标记是否完结
-    const isCompleted = prepared.chapterNumber >= prepared.bookMaxChapters;
+    const bookSnapshot = await prisma.book.findUnique({
+      where: { id: prepared.bookId },
+      select: {
+        seasonId: true,
+        plannedChapters: true,
+        chaptersPlan: true,
+        chapters: { select: { chapterNumber: true } },
+      },
+    });
+    const existingChapterNumbers = new Set(
+      (bookSnapshot?.chapters || []).map((chapter) => chapter.chapterNumber)
+    );
+    const outlineNumbers = Array.isArray(bookSnapshot?.chaptersPlan)
+      ? (bookSnapshot?.chaptersPlan as Array<{ number?: number }>).map((item) => item.number).filter((num): num is number => Number.isFinite(num))
+      : [];
+    const plannedCount = bookSnapshot?.plannedChapters && bookSnapshot.plannedChapters > 0
+      ? bookSnapshot.plannedChapters
+      : 0;
+    const expectedNumbers = plannedCount > 0
+      ? Array.from({ length: plannedCount }, (_, idx) => idx + 1)
+      : outlineNumbers.length > 0
+        ? outlineNumbers
+        : [];
+    const hasOutlineGaps = expectedNumbers.some((num) => !existingChapterNumbers.has(num));
+
+    const isCompleted = prepared.chapterNumber >= prepared.bookMaxChapters && !hasOutlineGaps;
     const scoreIncrement = 100 + Math.floor(Math.random() * 50);
     const viewIncrement = Math.floor(Math.random() * 50);
 
@@ -414,6 +450,23 @@ export class ChapterWritingService {
 
     if (isCompleted) {
       console.log(`[Chapter] 书籍已完成全部章节: bookId=${prepared.bookId}, maxChapters=${prepared.bookMaxChapters}`);
+    } else if (hasOutlineGaps) {
+      const seasonId = bookSnapshot?.seasonId;
+      if (seasonId) {
+        const season = await prisma.season.findUnique({
+          where: { id: seasonId },
+          select: { currentRound: true },
+        });
+        const round = season?.currentRound || prepared.chapterNumber;
+        await taskQueueService.create({
+          taskType: 'CATCH_UP',
+          payload: { seasonId, round },
+          priority: 9,
+        });
+        console.log(`[Chapter] 检测到大纲缺章，已触发追击任务: bookId=${prepared.bookId}, seasonId=${seasonId}, round=${round}`);
+      } else {
+        console.log(`[Chapter] 检测到大纲缺章，但缺少赛季信息，跳过追击: bookId=${prepared.bookId}`);
+      }
     }
 
     // 通知前端章节已发布

@@ -37,10 +37,10 @@ export class OutlineService {
     const agentConfig = await userService.getAgentConfig(userId);
 
     // 构建章节偏好文本
-    const userPreferredChapters = agentConfig?.maxChapters || 5;
-    const chapterPreferenceText = userPreferredChapters <= 3
+    const lengthPreference = agentConfig?.writingLengthPreference || 'medium';
+    const chapterPreferenceText = lengthPreference === 'short'
       ? '短篇小说'
-      : userPreferredChapters >= 7
+      : lengthPreference === 'long'
         ? '长篇小说'
         : '中篇小说';
 

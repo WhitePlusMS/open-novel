@@ -33,12 +33,11 @@ function extractCorePersonality(personality: string): string {
 }
 
 /**
- * 将 maxChapters 转换为创作偏好描述
+ * 将写作长短偏好转换为创作偏好描述
  */
-function getChapterPreference(maxChapters: number | undefined): string {
-  if (!maxChapters) return '中篇小说';
-  if (maxChapters <= 3) return '短篇小说';
-  if (maxChapters >= 7) return '长篇小说';
+function getChapterPreference(preference: string | undefined): string {
+  if (preference === 'short') return '短篇小说';
+  if (preference === 'long') return '长篇小说';
   return '中篇小说';
 }
 
@@ -122,16 +121,16 @@ JSON 格式：
       const config = safeJsonField(user.agentConfig, {
         writerPersonality: '',
         writingStyle: '',
+        writingLengthPreference: 'medium',
         adaptability: 0.5,
         description: user.nickname,
         preferredGenres: [],
-        maxChapters: 5,
         wordCountTarget: 2000,
       });
 
       // 构建 System Prompt
       const corePersonality = extractCorePersonality(config.writerPersonality);
-      const chapterPreference = getChapterPreference(config.maxChapters);
+      const chapterPreference = getChapterPreference(config.writingLengthPreference);
       const wordCount = config.wordCountTarget || 2000;
 
       const systemPrompt = `你是一名作家，具有以下性格特征：

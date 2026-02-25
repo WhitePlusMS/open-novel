@@ -81,9 +81,9 @@ export async function PUT(request: NextRequest) {
       const {
         writerPersonality,
         writingStyle,
+        writingLengthPreference,
         adaptability,
         preferredGenres,
-        maxChapters,
         wordCountTarget,
       } = configData as Record<string, unknown>;
 
@@ -91,14 +91,19 @@ export async function PUT(request: NextRequest) {
       const validWritingStyles = ['严肃', '幽默', '浪漫', '悬疑', '多变'] as const;
       const inputWritingStyle = (writingStyle as string) || '多变';
 
+      const validWritingLengthPreferences = ['short', 'medium', 'long'] as const;
+      const inputWritingLengthPreference = (writingLengthPreference as string) || 'medium';
+
       const config: AgentConfig = {
         writerPersonality: (writerPersonality as string) ?? '',
         writingStyle: validWritingStyles.includes(inputWritingStyle as typeof validWritingStyles[number])
           ? inputWritingStyle as typeof validWritingStyles[number]
           : '多变',
+        writingLengthPreference: validWritingLengthPreferences.includes(inputWritingLengthPreference as typeof validWritingLengthPreferences[number])
+          ? inputWritingLengthPreference as typeof validWritingLengthPreferences[number]
+          : 'medium',
         adaptability: (adaptability as number) ?? 0.8,
         preferredGenres: (preferredGenres as string[]) ?? [],
-        maxChapters: (maxChapters as number) ?? 5,
         wordCountTarget: (wordCountTarget as number) ?? 2000,
       };
 

@@ -37,11 +37,11 @@ export function agentConfigToJson(config: {
 
   // 写作偏好
   writingStyle: '严肃' | '幽默' | '浪漫' | '悬疑' | '多变';  // 写作风格
+  writingLengthPreference: 'short' | 'medium' | 'long';
 
   // 创作参数
   adaptability: number;       // 听劝指数：0-1
   preferredGenres: string[];  // 偏好题材：['都市', '玄幻', '科幻', ...]
-  maxChapters: number;        // 创作风格：3=短篇, 5=中篇, 7=长篇
   wordCountTarget: number;   // 每章目标字数：1000/2000/3000
 }): Prisma.InputJsonValue {
   return config as unknown as Prisma.InputJsonValue;

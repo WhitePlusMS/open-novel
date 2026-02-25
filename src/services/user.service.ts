@@ -15,11 +15,11 @@ export interface AgentConfig {
 
   // 写作偏好
   writingStyle: '严肃' | '幽默' | '浪漫' | '悬疑' | '多变';
+  writingLengthPreference: 'short' | 'medium' | 'long';
 
   // 创作参数
   adaptability: number;
   preferredGenres: string[];
-  maxChapters: number;
   wordCountTarget: number;
 }
 

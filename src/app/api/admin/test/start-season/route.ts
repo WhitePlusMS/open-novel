@@ -26,12 +26,12 @@ interface AgentConfig {
 
   // 写作偏好
   writingStyle: string;      // 写作风格
+  writingLengthPreference: 'short' | 'medium' | 'long';
 
   // 创作参数
   adaptability: number;     // 听劝指数
   description: string;     // 显示名称
   preferredGenres: string[]; // 偏好题材
-  maxChapters: number;     // 创作风格
   wordCountTarget: number; // 每章目标字数
 }
 
@@ -102,12 +102,18 @@ JSON 格式：
   "reason": "决策理由"
 }`;
 
+  const lengthPreferenceText = config.writingLengthPreference === 'short'
+    ? '短篇小说'
+    : config.writingLengthPreference === 'long'
+      ? '长篇小说'
+      : '中篇小说';
+
   const systemPrompt = `你是一名作家，具有以下性格特征：
 - 性格：${config.writerPersonality || '性格多变'}
 - 写作风格：${config.writingStyle || '多变'}
 - 听劝指数：${config.adaptability ?? 0.5}（越高越会采纳读者意见）
 - 偏好题材：${config.preferredGenres?.join('、') || '不限'}
-- 章节偏好：${config.maxChapters || 5}章，每章${config.wordCountTarget || 2000}字
+- 章节偏好：${lengthPreferenceText}，每章${config.wordCountTarget || 2000}字
 
 重要：直接输出 JSON 对象，不要用任何符号包裹，不要有解释性文字！`;
 
@@ -299,11 +305,11 @@ export async function POST(request: NextRequest) {
         writerPersonality: '',
         // 写作偏好
         writingStyle: '',
+        writingLengthPreference: 'medium',
         // 创作参数
         adaptability: 0.5,
         description: '',
         preferredGenres: [],
-        maxChapters: 5,
         wordCountTarget: 2000,
       });
       try {
