@@ -114,7 +114,132 @@
   --transition-slow: 300ms ease;
 }
 
-/* 暗色模式 */
+/* 暗色模式 - 基于类名切换 */
+.dark {
+  --color-gray-900: #ededed;
+  --color-gray-800: #d4d4d4;
+  --color-gray-700: #a3a3a3;
+  --color-gray-600: #737373;
+  --color-gray-500: #525252;
+  --color-gray-400: #404040;
+  --color-gray-300: #262626;
+  --color-gray-200: #171717;
+  --color-gray-100: #0a0a0a;
+  --color-gray-50: #000000;
+
+  --color-surface-50: #171717;
+  --color-surface-100: #1f1f1f;
+  --color-surface-200: #262626;
+  --color-surface-300: #404040;
+  --color-surface-400: #525252;
+
+  --color-reader-bg: #1a1a1a;
+  --color-reader-text: #d4d4d4;
+  --color-reader-line: #262626;
+
+  /* 暗色模式背景 */
+  --color-bg-primary: #1a1a1a;
+  --color-bg-secondary: #171717;
+  --color-bg-tertiary: #1f1f1f;
+  --color-border: #2a2a2a;
+  --color-border-hover: #3a3a3a;
+}
+
+/* 暗色模式 body 背景 */
+.dark body {
+  background:
+    radial-gradient(ellipse at top left, rgba(249, 115, 22, 0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at top right, rgba(251, 146, 60, 0.03) 0%, transparent 50%),
+    linear-gradient(180deg, #1a1a1a 0%, #171717 50%, #151515 100%);
+  background-attachment: fixed;
+}
+
+/* 暗色模式全局覆盖 - 强制将白色背景改为暗色 */
+.dark .bg-white {
+  background-color: #1f1f1f !important;
+}
+
+.dark .bg-white\/80 {
+  background-color: rgba(31, 31, 31, 0.8) !important;
+}
+
+.dark .bg-white\/95 {
+  background-color: rgba(31, 31, 31, 0.95) !important;
+}
+
+.dark .bg-white\/50 {
+  background-color: rgba(31, 31, 31, 0.5) !important;
+}
+
+.dark .bg-white\/90 {
+  background-color: rgba(31, 31, 31, 0.9) !important;
+}
+
+/* 暗色模式文字颜色覆盖 */
+.dark .text-gray-900 {
+  color: #f5f5f5 !important;
+}
+
+.dark .text-gray-800 {
+  color: #e5e5e5 !important;
+}
+
+.dark .text-gray-700 {
+  color: #d4d4d4 !important;
+}
+
+.dark .text-gray-600 {
+  color: #a3a3a3 !important;
+}
+
+.dark .text-gray-500 {
+  color: #737373 !important;
+}
+
+/* 暗色模式边框覆盖 */
+.dark .border-gray-100 {
+  border-color: #262626 !important;
+}
+
+.dark .border-gray-200 {
+  border-color: #333333 !important;
+}
+
+/* 暗色模式阴影覆盖 */
+.dark .shadow-sm {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark .shadow-md {
+  box-shadow: 0 4px 12px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark .shadow-lg {
+  box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.5), 0 8px 16px -4px rgba(0, 0, 0, 0.4) !important;
+}
+
+.dark .shadow-card {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark .shadow-card-hover {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* 暗色模式渐变背景覆盖 */
+.dark .bg-gradient-to-b {
+  background-image: linear-gradient(to bottom, var(--tw-gradient-stops)) !important;
+}
+
+.dark .from-gray-50 {
+  --tw-gradient-from: #1f1f1f !important;
+}
+
+.dark .to-white {
+  --tw-gradient-to: #1a1a1a !important;
+}
+
+/* 暗色模式媒体查询（保留用于系统检测）*/
 @media (prefers-color-scheme: dark) {
   :root {
     --color-gray-900: #ededed;
