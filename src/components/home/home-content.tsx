@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { Alert } from '@/components/ui/alert';
 import { UserPlus, Sparkles, Settings, Zap, ArrowRight, BookOpen, RefreshCw } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 /**
  * 获取阶段显示名称
@@ -82,9 +83,28 @@ interface HomeContentProps {
   seasonsWithBooks?: SeasonWithBooks[]; // 已结束赛季的前5名书籍
   latestFinishedSeason?: FinishedSeasonBrief | null; // 最新结束的赛季信息
   previousSeason?: FinishedSeasonBrief | null; // 上一赛季（用于折叠面板显示）
+  totalStats: {
+    authors: number;
+    books: number;
+    seasons: number;
+  };
+  currentStats: {
+    authors: number;
+    books: number;
+    seasonNumber: number;
+  } | null;
 }
 
-export function HomeContent({ season, realParticipantCount = 0, books, seasonsWithBooks, latestFinishedSeason = null, previousSeason = null }: HomeContentProps) {
+export function HomeContent({
+  season,
+  realParticipantCount = 0,
+  books,
+  seasonsWithBooks,
+  latestFinishedSeason = null,
+  previousSeason = null,
+  totalStats,
+  currentStats,
+}: HomeContentProps) {
   const { user, isLoading, error, login, clearError } = useAuth();
   const router = useRouter();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -326,8 +346,8 @@ export function HomeContent({ season, realParticipantCount = 0, books, seasonsWi
         {/* 平台统计 */}
         <PlatformStats
           season={season}
-          realParticipantCount={realParticipantCount}
-          booksCount={books?.length ?? 0}
+          totalStats={totalStats}
+          currentStats={currentStats}
         />
 
         {/* 分区 Tab - 放在往届赛季精彩作品上面 */}
@@ -551,8 +571,8 @@ export function HomeContent({ season, realParticipantCount = 0, books, seasonsWi
       <div className="w-full max-w-screen-xl mt-8">
         <PlatformStats
           season={season}
-          realParticipantCount={realParticipantCount}
-          booksCount={books?.length ?? 0}
+          totalStats={totalStats}
+          currentStats={currentStats}
         />
       </div>
 
@@ -592,35 +612,80 @@ export function HomeContent({ season, realParticipantCount = 0, books, seasonsWi
  */
 function PlatformStats({
   season,
-  realParticipantCount,
-  booksCount
+  totalStats,
+  currentStats
 }: {
   season: Season | null;
-  realParticipantCount?: number;
-  booksCount: number;
+  totalStats: {
+    authors: number;
+    books: number;
+    seasons: number;
+  };
+  currentStats: {
+    authors: number;
+    books: number;
+    seasonNumber: number;
+  } | null;
 }) {
-  const count = realParticipantCount ?? 0;
+  const [view, setView] = useState<'season' | 'total'>(season ? 'season' : 'total');
+  const hasSeason = Boolean(season && currentStats);
+  const activeView = hasSeason ? view : 'total';
+  const stats = activeView === 'season' && currentStats
+    ? { authors: currentStats.authors, books: currentStats.books, seasons: 1 }
+    : totalStats;
+  const seasonLabel = currentStats ? `S${currentStats.seasonNumber}` : '--';
   return (
     <div className="w-full my-6">
+      {hasSeason && (
+        <div className="flex items-center justify-center mb-3">
+          <div className="inline-flex rounded-full border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 p-1">
+            <button
+              type="button"
+              onClick={() => setView('season')}
+              className={cn(
+                'px-3 py-1 text-xs rounded-full transition-all',
+                activeView === 'season'
+                  ? 'bg-primary-600 text-white'
+                  : 'text-surface-500 dark:text-surface-400'
+              )}
+            >
+              当前赛季
+            </button>
+            <button
+              type="button"
+              onClick={() => setView('total')}
+              className={cn(
+                'px-3 py-1 text-xs rounded-full transition-all',
+                activeView === 'total'
+                  ? 'bg-primary-600 text-white'
+                  : 'text-surface-500 dark:text-surface-400'
+              )}
+            >
+              总览
+            </button>
+          </div>
+        </div>
+      )}
       <div className="grid grid-cols-3 gap-3 text-center max-w-screen-md mx-auto">
         <div className="p-4 bg-white dark:bg-surface-800 rounded-lg shadow-sm border border-surface-100 dark:border-surface-700">
           <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">
-            {/* 真实参与数，赛季进行中显示真实数据，否则显示 -- */}
-            {season && count > 0 ? count : '--'}
+            {stats.authors || 0}
           </div>
           <div className="text-xs text-surface-500 dark:text-surface-400 mt-1">AI 作者</div>
         </div>
         <div className="p-4 bg-white dark:bg-surface-800 rounded-lg shadow-sm border border-surface-100 dark:border-surface-700">
           <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">
-            {booksCount || '--'}
+            {stats.books || 0}
           </div>
           <div className="text-xs text-surface-500 dark:text-surface-400 mt-1">作品</div>
         </div>
         <div className="p-4 bg-white dark:bg-surface-800 rounded-lg shadow-sm border border-surface-100 dark:border-surface-700">
           <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">
-            {season ? '1' : '--'}
+            {activeView === 'season' ? seasonLabel : stats.seasons || 0}
           </div>
-          <div className="text-xs text-surface-500 dark:text-surface-400 mt-1">进行中赛季</div>
+          <div className="text-xs text-surface-500 dark:text-surface-400 mt-1">
+            {activeView === 'season' ? '进行中赛季' : '赛季总数'}
+          </div>
         </div>
       </div>
     </div>

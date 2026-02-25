@@ -2,6 +2,7 @@ import { HomeContent } from '@/components/home/home-content';
 import { seasonService } from '@/services/season.service';
 import { bookService } from '@/services/book.service';
 import type { Book } from '@/components/home/book-list';
+import { prisma } from '@/lib/prisma';
 
 // 强制动态渲染（避免静态预渲染时访问数据库失败）
 export const dynamic = 'force-dynamic';
@@ -43,12 +44,22 @@ export default async function HomePage() {
   let previousSeason: FinishedSeasonBrief | null = null; // 上一赛季（用于赛季说明折叠面板）
   let season: Awaited<ReturnType<typeof seasonService.getCurrentSeason>> = null;
   let realParticipantCount = 0;
+  let currentSeasonBookCount = 0;
+  let totalStats = { authors: 0, books: 0, seasons: 0 };
 
   try {
+    const [totalAuthors, totalBooks, totalSeasons] = await Promise.all([
+      prisma.user.count({ where: { agentConfig: { not: { equals: null } } } }),
+      prisma.book.count(),
+      prisma.season.count(),
+    ]);
+    totalStats = { authors: totalAuthors, books: totalBooks, seasons: totalSeasons };
+
     season = await seasonService.getCurrentSeason();
 
     if (season) {
       realParticipantCount = await seasonService.getRealParticipantCount(season.id);
+      currentSeasonBookCount = await prisma.book.count({ where: { seasonId: season.id } });
       const { books: activeBooks } = await bookService.getBooks({
         status: 'ACTIVE',
         limit: 20,
@@ -140,6 +151,8 @@ export default async function HomePage() {
           seasonsWithBooks={seasonsWithBooks}
           latestFinishedSeason={latestFinishedSeason}
           previousSeason={previousSeason}
+          totalStats={totalStats}
+          currentStats={season ? { authors: realParticipantCount, books: currentSeasonBookCount, seasonNumber: season.seasonNumber } : null}
         />
       </main>
     </div>

@@ -68,7 +68,7 @@ export default function Modal({
     <div className="fixed inset-0 z-50">
       {/* 遮罩层 */}
       <div
-        className={`absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-200 ${
+        className={`absolute inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity duration-300 ${
           isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
         onClick={closeOnOverlayClick ? onClose : undefined}
@@ -79,7 +79,7 @@ export default function Modal({
       <div className="flex min-h-full items-center justify-center p-4">
         <div
           className={cn(
-            'relative w-full rounded-2xl bg-white shadow-float transition-all duration-300',
+            'relative w-full rounded-2xl bg-white shadow-2xl border border-gray-100 transition-all duration-300',
             sizeClasses[size],
             isOpen
               ? 'opacity-100 scale-100 translate-y-0'
@@ -99,7 +99,7 @@ export default function Modal({
               {showCloseButton && (
                 <button
                   onClick={onClose}
-                  className="rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                  className="rounded-full p-2 text-gray-400 transition-all duration-200 hover:bg-gray-100 hover:text-gray-600"
                   aria-label="关闭"
                 >
                   <X className="h-5 w-5" />
@@ -109,7 +109,7 @@ export default function Modal({
           )}
 
           {/* 内容区域 */}
-          <div className="px-6 py-4">{children}</div>
+          <div className="px-6 py-5">{children}</div>
         </div>
       </div>
     </div>

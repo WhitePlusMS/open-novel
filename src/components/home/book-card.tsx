@@ -52,13 +52,13 @@ export function BookCard({ book, rank, showSeason = true }: BookCardProps) {
   const zoneConfig = getZoneConfig(book.zoneStyle);
   const zoneStyle = zoneConfig
     ? { bg: zoneConfig.bg, text: zoneConfig.text, label: zoneConfig.label }
-    : { bg: 'bg-surface-100', text: 'text-surface-700', label: book.zoneStyle };
+    : { bg: 'bg-gray-100', text: 'text-gray-600', label: book.zoneStyle };
   const status = book.status || 'ACTIVE';
   const statusConfig = STATUS_CONFIG[status] || STATUS_CONFIG.ACTIVE;
 
   return (
     <Link href={`/book/${book.id}`}>
-      <div className="group relative overflow-hidden rounded-xl bg-white shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1">
+      <div className="group relative overflow-hidden rounded-2xl bg-white border border-gray-100 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-gray-200 hover:-translate-y-2">
         {/* 封面区域 */}
         <div className="relative aspect-[3/4] overflow-hidden bg-gray-100">
           {book.coverImage ? (
@@ -66,38 +66,38 @@ export function BookCard({ book, rank, showSeason = true }: BookCardProps) {
               src={book.coverImage}
               alt={book.title}
               fill
-              className="object-cover transition-transform duration-300 group-hover:scale-105"
+              className="object-cover transition-transform duration-500 group-hover:scale-110"
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary-100 to-primary-300">
-              <BookOpen className="h-16 w-16 text-primary-400" />
+            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary-100 via-primary-50 to-orange-50">
+              <BookOpen className="h-16 w-16 text-primary-300" />
             </div>
           )}
 
           {/* 左上角：排名徽章（前3名） */}
           {rank && rank <= 3 && (
-            <div className="absolute left-3 top-3 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 text-white shadow-lg">
+            <div className="absolute left-3 top-3 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 text-white shadow-lg ring-2 ring-white/50">
               {rank === 1 ? <Trophy className="h-5 w-5" /> : <Medal className="h-5 w-5" />}
             </div>
           )}
 
           {/* 右上角：状态标签 */}
           <div className="absolute right-3 top-3 z-20">
-            <span className={`rounded-full px-3 py-1 text-xs font-medium shadow-md ${statusConfig.bg} ${statusConfig.text}`}>
+            <span className={`rounded-full px-3 py-1 text-xs font-semibold shadow-md backdrop-blur-sm ${statusConfig.bg} ${statusConfig.text}`}>
               {statusConfig.label}
             </span>
           </div>
 
           {/* 左下角：分区类型图标（半透明） */}
           <div className="absolute bottom-3 left-3 z-10">
-            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${zoneStyle.bg} ${zoneStyle.text} opacity-90`}>
+            <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${zoneStyle.bg} ${zoneStyle.text} opacity-90 shadow-sm`}>
               {zoneStyle.label}
             </span>
           </div>
 
           {/* 悬浮层：阅读按钮 */}
-          <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition-opacity duration-300 group-hover:opacity-100 z-30">
-            <button className="rounded-full bg-white px-6 py-2.5 text-sm font-medium text-gray-900 shadow-lg transition-transform hover:scale-105" aria-label={`阅读 ${book.title}`}>
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-all duration-300 group-hover:opacity-100 z-30 backdrop-blur-sm">
+            <button className="rounded-full bg-white/95 backdrop-blur-sm px-8 py-3 text-sm font-semibold text-gray-900 shadow-xl transition-all duration-200 hover:scale-105 hover:shadow-2xl" aria-label={`阅读 ${book.title}`}>
               立即阅读
             </button>
           </div>
@@ -106,12 +106,12 @@ export function BookCard({ book, rank, showSeason = true }: BookCardProps) {
         {/* 信息区域 */}
         <div className="p-4">
           {/* 标题 */}
-          <h3 className="mb-1 line-clamp-1 text-lg font-bold text-gray-900">
+          <h3 className="mb-1.5 line-clamp-1 text-lg font-bold text-gray-900 group-hover:text-primary-600 transition-colors">
             {book.title}
           </h3>
 
           {/* 作者 */}
-          <div className="mb-2 flex items-center gap-2 text-sm text-gray-500">
+          <div className="mb-2 flex items-center gap-2 text-sm text-gray-400">
             <User className="h-4 w-4" />
             <span className="line-clamp-1">{book.author.nickname}</span>
           </div>
@@ -128,7 +128,7 @@ export function BookCard({ book, rank, showSeason = true }: BookCardProps) {
               {book.chapterCount}章
             </span>
             <span className="flex items-center gap-1">
-              <Flame className="h-4 w-4 text-heat" />
+              <Flame className="h-4 w-4 text-orange-500" />
               {formatNumber(book.heat)}
             </span>
             <span className="flex items-center gap-1">

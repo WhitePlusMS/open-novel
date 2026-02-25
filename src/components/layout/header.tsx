@@ -64,11 +64,11 @@ export function Header() {
     : visibleNavItems;
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-surface-200 dark:bg-surface-900/95 dark:border-surface-700">
+    <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100">
       {/* 桌面端导航 - 更宽 */}
       <div className="hidden lg:flex max-w-6xl mx-auto px-6 h-14 items-center justify-between">
-        {/* Logo */}
-        <Link href="/" className="text-xl font-bold text-primary-600 dark:text-primary-400">
+        {/* Logo - 渐变效果 */}
+        <Link href="/" className="text-2xl font-bold bg-gradient-to-r from-primary-500 to-primary-600 bg-clip-text text-transparent">
           InkSurvivor
         </Link>
 
@@ -83,7 +83,7 @@ export function Header() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'flex items-center gap-2 px-4 py-2 rounded-lg transition-colors',
+                  'relative flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200',
                   isActive
                     ? 'text-primary-600 bg-primary-50 dark:text-primary-400 dark:bg-primary-900/30'
                     : item.isAdmin
@@ -95,6 +95,10 @@ export function Header() {
               >
                 <item.icon className="w-4 h-4" aria-hidden="true" />
                 <span className="text-sm font-medium">{item.label}</span>
+                {/* 激活指示器 */}
+                {isActive && (
+                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary-500" />
+                )}
               </Link>
             );
           })}
@@ -104,8 +108,8 @@ export function Header() {
 
       {/* 移动端导航 - 保持原样 */}
       <div className="lg:hidden max-w-md mx-auto px-4 h-14 flex items-center justify-between">
-        {/* Logo */}
-        <Link href="/" className="text-xl font-bold text-primary-600 dark:text-primary-400">
+        {/* Logo - 渐变效果 */}
+        <Link href="/" className="text-xl font-bold bg-gradient-to-r from-primary-500 to-primary-600 bg-clip-text text-transparent">
           InkSurvivor
         </Link>
 

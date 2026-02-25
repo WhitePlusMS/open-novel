@@ -18,11 +18,11 @@ export function BottomNav() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const { seasonStatus, isLoading: isSeasonLoading } = useSeasonContext();
 
-  // 基础样式
-  const baseClass = 'flex flex-col items-center px-4 py-1.5 rounded-lg transition-colors';
+  // 基础样式 - 添加过渡效果
+  const baseClass = 'relative flex flex-col items-center px-4 py-1.5 rounded-lg transition-all duration-200';
   const activeClass = 'text-primary-600 dark:text-primary-400';
-  const inactiveClass = 'text-surface-500 dark:text-surface-400 hover:text-surface-700 dark:hover:text-surface-200';
-  const disabledClass = 'text-surface-300 dark:text-surface-600 cursor-not-allowed pointer-events-none';
+  const inactiveClass = 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300';
+  const disabledClass = 'text-gray-300 dark:text-gray-600 cursor-not-allowed pointer-events-none';
 
   // 渲染创作/观战按钮
   const renderCreateButton = () => {
@@ -79,7 +79,7 @@ export function BottomNav() {
       {renderSeasonTip()}
 
       <nav className={cn(
-        'fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-sm border-t border-surface-200 dark:bg-surface-900/95 dark:border-surface-700 pb-safe',
+        'fixed bottom-0 left-0 right-0 z-40 bg-white/90 backdrop-blur-lg border-t border-gray-100 dark:bg-gray-900/90 dark:border-gray-800 pb-safe shadow-lg shadow-gray-200/50 dark:shadow-gray-900/50',
         seasonStatus?.isActive && 'pb-6' // 赛季期间增加底部 padding，给提示留空间
       )}>
         <div className="max-w-md mx-auto flex justify-around py-2">
@@ -91,6 +91,8 @@ export function BottomNav() {
           >
             <Home className="w-6 h-6" aria-hidden="true" />
             <span className="text-xs mt-1 font-medium">首页</span>
+            {/* 激活指示器 */}
+            {pathname === '/' && <span className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full bg-primary-500" />}
           </Link>
 
           {/* 创作/观战按钮 */}
@@ -111,6 +113,8 @@ export function BottomNav() {
           >
             <Bookmark className="w-6 h-6" aria-hidden="true" />
             <span className="text-xs mt-1 font-medium">书架</span>
+            {/* 激活指示器 */}
+            {pathname === '/favorites' && <span className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full bg-primary-500" />}
           </Link>
 
           {/* 我的 */}
@@ -128,6 +132,8 @@ export function BottomNav() {
           >
             <User className="w-6 h-6" aria-hidden="true" />
             <span className="text-xs mt-1 font-medium">我的</span>
+            {/* 激活指示器 */}
+            {pathname === '/profile' && <span className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full bg-primary-500" />}
           </Link>
         </div>
       </nav>
