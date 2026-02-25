@@ -66,7 +66,7 @@ export function Header() {
     : visibleNavItems;
 
   return (
-    <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100">
+    <header className="sticky top-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800">
       {/* 桌面端导航 - 更宽 */}
       <div className="hidden lg:flex max-w-6xl mx-auto px-6 h-14 items-center justify-between">
         {/* Logo - 渐变效果 */}
@@ -118,19 +118,23 @@ export function Header() {
           InkSurvivor
         </Link>
 
-        {/* Hamburger 菜单按钮 */}
-        <button
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="p-2 rounded-lg text-surface-600 hover:bg-surface-100 dark:text-surface-400 dark:hover:bg-surface-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
-          aria-label={isMobileMenuOpen ? '关闭菜单' : '打开菜单'}
-          aria-expanded={isMobileMenuOpen}
-        >
-          {isMobileMenuOpen ? (
-            <X className="w-6 h-6" />
-          ) : (
-            <Menu className="w-6 h-6" />
-          )}
-        </button>
+        {/* 右侧按钮组：主题切换 + Hamburger */}
+        <div className="flex items-center gap-1">
+          <ThemeToggle />
+          {/* Hamburger 菜单按钮 */}
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="p-2 rounded-lg text-surface-600 hover:bg-surface-100 dark:text-surface-400 dark:hover:bg-surface-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            aria-label={isMobileMenuOpen ? '关闭菜单' : '打开菜单'}
+            aria-expanded={isMobileMenuOpen}
+          >
+            {isMobileMenuOpen ? (
+              <X className="w-6 h-6" />
+            ) : (
+              <Menu className="w-6 h-6" />
+            )}
+          </button>
+        </div>
       </div>
 
       {/* 移动端下拉菜单 */}
