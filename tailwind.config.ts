@@ -96,7 +96,11 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'var(--font-sans)', 'system-ui', 'PingFang SC', 'Microsoft YaHei', 'sans-serif'],
+        // 使用新的字体变量
+        sans: ['var(--font-dm-sans)', 'var(--font-noto-sans-sc)', '-apple-system', 'BlinkMacSystemFont', 'PingFang SC', 'Microsoft YaHei', 'sans-serif'],
+        display: ['var(--font-dm-sans)', 'var(--font-noto-sans-sc)', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        body: ['var(--font-dm-sans)', 'var(--font-noto-sans-sc)', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        accent: ['var(--font-space-grotesk)', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
         serif: ['Noto Serif SC', 'var(--font-serif)', 'Georgia', 'serif'],
         mono: ['JetBrains Mono', 'Consolas', 'monospace'],
       },
@@ -111,10 +115,18 @@ const config: Config = {
         '4xl': ['2.25rem', { lineHeight: '3rem' }],
       },
       boxShadow: {
+        // 升级的阴影系统
         'card': '0 2px 8px rgba(0, 0, 0, 0.04)',
-        'card-hover': '0 4px 16px rgba(0, 0, 0, 0.08)',
-        'float': '0 8px 24px rgba(0, 0, 0, 0.12)',
+        'card-hover': '0 8px 20px rgba(0, 0, 0, 0.08)',
+        'float': '0 12px 32px rgba(0, 0, 0, 0.12)',
         'glow': '0 0 20px rgba(249, 115, 22, 0.3)',
+        'glow-sm': '0 0 12px rgba(249, 115, 22, 0.2)',
+        'glow-lg': '0 0 30px rgba(249, 115, 22, 0.4)',
+        // 新增阴影
+        'sm': '0 1px 2px 0 rgb(0 0 0 / 0.04)',
+        'md': '0 4px 12px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.06)',
+        'lg': '0 12px 24px -4px rgb(0 0 0 / 0.1), 0 8px 16px -4px rgb(0 0 0 / 0.08)',
+        'xl': '0 20px 40px -6px rgb(0 0 0 / 0.12)',
       },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-out',

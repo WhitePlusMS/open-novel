@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { DM_Sans, Space_Grotesk, Noto_Sans_SC } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/auth-provider";
 import { Header } from "@/components/layout/header";
@@ -7,6 +8,7 @@ import { BottomNav } from "@/components/layout/bottom-nav";
 import { ToastProvider } from "@/components/ui/toast";
 import { SeasonProvider } from "@/components/providers/season-context";
 
+// 本地字体
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
   variable: "--font-geist-sans",
@@ -16,6 +18,27 @@ const geistMono = localFont({
   src: "./fonts/GeistMonoVF.woff",
   variable: "--font-geist-mono",
   weight: "100 900",
+});
+
+// Google 字体 - DM Sans (现代时尚)
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  variable: "--font-dm-sans",
+  weight: ["400", "500", "600", "700"],
+});
+
+// Space Grotesk (装饰性数字)
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-space-grotesk",
+  weight: ["400", "500", "600", "700"],
+});
+
+// Noto Sans SC (中文)
+const notoSansSC = Noto_Sans_SC({
+  subsets: ["latin"],
+  variable: "--font-noto-sans-sc",
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -31,7 +54,7 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-surface-50`}
+        className={`${geistSans.variable} ${geistMono.variable} ${dmSans.variable} ${spaceGrotesk.variable} ${notoSansSC.variable} antialiased bg-surface-50 font-sans`}
       >
         <AuthProvider>
           <ToastProvider>
