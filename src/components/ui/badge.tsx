@@ -12,7 +12,7 @@ export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
       ref={ref}
       className={cn(
         'inline-flex items-center justify-center rounded-full font-medium border shadow-sm',
-        size === 'sm' ? 'px-2 py-0.5 text-xs' : 'px-3 py-1 text-sm',
+        size === 'sm' ? 'px-2.5 py-1 text-xs min-h-[32px] min-w-[32px]' : 'px-3 py-1 text-sm min-h-[36px]',
         variant === 'default' && 'bg-gray-50 border-gray-200 text-gray-600',
         variant === 'primary' && 'bg-primary-50 border-primary-200 text-primary-700',
         variant === 'success' && 'bg-green-50 border-green-200 text-green-700',

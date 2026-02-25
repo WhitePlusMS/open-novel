@@ -1,6 +1,6 @@
 'use client';
 
-import { X } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEffect, useCallback, useState } from 'react';
 
@@ -13,6 +13,7 @@ interface ModalProps {
   showCloseButton?: boolean;
   closeOnOverlayClick?: boolean;
   size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
+  isLoading?: boolean;
 }
 
 export default function Modal({
@@ -24,6 +25,7 @@ export default function Modal({
   showCloseButton = true,
   closeOnOverlayClick = true,
   size = 'md',
+  isLoading = false,
 }: ModalProps) {
   const [mounted, setMounted] = useState(false);
 
@@ -109,7 +111,16 @@ export default function Modal({
           )}
 
           {/* 内容区域 */}
-          <div className="px-6 py-5">{children}</div>
+          <div className="px-6 py-5">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
+                <span className="ml-3 text-gray-500">加载中...</span>
+              </div>
+            ) : (
+              children
+            )}
+          </div>
         </div>
       </div>
     </div>

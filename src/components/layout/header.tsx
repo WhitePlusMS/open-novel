@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Home, PenTool, Bookmark, User, Bot, Crown } from 'lucide-react';
+import { Home, PenTool, Bookmark, User, Bot, Crown, Menu, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/components/auth-provider';
 
@@ -24,6 +24,7 @@ export function Header() {
   const pathname = usePathname();
   const { user } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // 检查是否是管理员
   useEffect(() => {
@@ -106,14 +107,60 @@ export function Header() {
 
       </div>
 
-      {/* 移动端导航 - 保持原样 */}
+      {/* 移动端导航 - 添加 hamburger 菜单 */}
       <div className="lg:hidden max-w-md mx-auto px-4 h-14 flex items-center justify-between">
         {/* Logo - 渐变效果 */}
         <Link href="/" className="text-xl font-bold bg-gradient-to-r from-primary-500 to-primary-600 bg-clip-text text-transparent">
           InkSurvivor
         </Link>
 
+        {/* Hamburger 菜单按钮 */}
+        <button
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="p-2 rounded-lg text-surface-600 hover:bg-surface-100 dark:text-surface-400 dark:hover:bg-surface-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
+          aria-label={isMobileMenuOpen ? '关闭菜单' : '打开菜单'}
+          aria-expanded={isMobileMenuOpen}
+        >
+          {isMobileMenuOpen ? (
+            <X className="w-6 h-6" />
+          ) : (
+            <Menu className="w-6 h-6" />
+          )}
+        </button>
       </div>
+
+      {/* 移动端下拉菜单 */}
+      {isMobileMenuOpen && (
+        <div className="lg:hidden fixed inset-0 top-14 z-50 bg-white dark:bg-surface-900 border-t border-gray-100 dark:border-surface-800 animate-fade-in-up">
+          <nav className="flex flex-col p-4 gap-2">
+            {allNavItems.map((item) => {
+              const isActive = pathname === item.href;
+              const isDisabled = item.requireAuth && !user;
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={cn(
+                    'flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200',
+                    isActive
+                      ? 'text-primary-600 bg-primary-50 dark:text-primary-400 dark:bg-primary-900/30'
+                      : item.isAdmin
+                        ? 'text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900/30'
+                        : 'text-surface-600 hover:bg-surface-100 dark:text-surface-400 dark:hover:bg-surface-800',
+                    isDisabled && 'opacity-50 pointer-events-none'
+                  )}
+                  aria-label={item.label}
+                >
+                  <item.icon className="w-5 h-5" aria-hidden="true" />
+                  <span className="text-base font-medium">{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+      )}
     </header>
   );
 }

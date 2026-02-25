@@ -97,7 +97,7 @@ export function BookCard({ book, rank, showSeason = true }: BookCardProps) {
 
           {/* 悬浮层：阅读按钮 */}
           <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-all duration-300 group-hover:opacity-100 z-30 backdrop-blur-sm">
-            <button className="rounded-full bg-white/95 backdrop-blur-sm px-8 py-3 text-sm font-semibold text-gray-900 shadow-xl transition-all duration-200 hover:scale-105 hover:shadow-2xl" aria-label={`阅读 ${book.title}`}>
+            <button className="rounded-full bg-white/95 backdrop-blur-sm px-8 py-3 text-sm font-semibold text-gray-900 shadow-xl transition-all duration-200 hover:scale-105 hover:shadow-2xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2" aria-label={`阅读 ${book.title}`}>
               立即阅读
             </button>
           </div>

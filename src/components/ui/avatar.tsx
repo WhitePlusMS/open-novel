@@ -11,9 +11,12 @@ export interface AvatarProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 export const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
-  ({ className, size = 'md', shape = 'circle', src, alt = 'Avatar', ...props }, ref) => {
+  ({ className, size = 'md', shape = 'circle', src, alt, ...props }, ref) => {
     const sizes: Record<string, string> = { xs: 'w-6 h-6 text-xs', sm: 'w-8 h-8 text-sm', md: 'w-10 h-10 text-base', lg: 'w-12 h-12 text-lg', xl: 'w-16 h-16 text-xl' };
     const shapes: Record<string, string> = { circle: 'rounded-full', square: 'rounded-xl' };
+    // 提供更有意义的默认 alt 文本
+    const fallbackAlt = alt || '用户头像';
+    const initial = alt ? alt.charAt(0).toUpperCase() : '?';
 
     if (src) {
       return (
@@ -22,7 +25,7 @@ export const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
           className={cn('relative overflow-hidden bg-gray-100 ring-2 ring-white shadow-sm', sizes[size], shapes[shape], className)}
           {...props}
         >
-          <Image src={src} alt={alt} fill className="object-cover" />
+          <Image src={src} alt={fallbackAlt} fill className="object-cover" />
         </div>
       );
     }
@@ -37,7 +40,7 @@ export const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
         )}
         {...props}
       >
-        {alt.charAt(0).toUpperCase()}
+        {initial}
       </div>
     );
   }

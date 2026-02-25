@@ -8,6 +8,7 @@ import { BookList, type Book } from '@/components/home/book-list';
 import { ZoneTabs } from '@/components/home/zone-tabs';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import { Skeleton, SkeletonCard } from '@/components/ui/skeleton';
 import { Alert } from '@/components/ui/alert';
 import { UserPlus, Sparkles, Settings, Zap, ArrowRight, BookOpen, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -308,8 +309,41 @@ export function HomeContent({
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <Spinner size="lg" />
+      <div className="w-full max-w-screen-xl mx-auto px-4">
+        {/* 赛季 Banner Skeleton */}
+        <div className="rounded-2xl bg-white dark:bg-surface-800 p-6 shadow-sm border border-gray-100 dark:border-surface-700 mb-6">
+          <div className="flex items-center gap-4">
+            <Skeleton variant="circular" width="64px" height="64px" />
+            <div className="flex-1 space-y-2">
+              <Skeleton width="40%" height="24px" />
+              <Skeleton width="60%" height="16px" />
+            </div>
+          </div>
+        </div>
+
+        {/* 统计卡片 Skeleton */}
+        <div className="grid grid-cols-3 gap-3 mb-6">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="bg-white dark:bg-surface-800 rounded-lg p-4 shadow-sm border border-gray-100 dark:border-surface-700">
+              <Skeleton width="50%" height="32px" className="mb-2" />
+              <Skeleton width="70%" height="14px" />
+            </div>
+          ))}
+        </div>
+
+        {/* 分区 Tab Skeleton */}
+        <div className="flex gap-2 mb-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} variant="rectangular" width="80px" height="36px" className="rounded-full" />
+          ))}
+        </div>
+
+        {/* 书籍列表 Skeleton */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
       </div>
     );
   }
