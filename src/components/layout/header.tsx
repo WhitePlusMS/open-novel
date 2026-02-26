@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Home, PenTool, Bookmark, User, Bot, Crown, Menu, X } from 'lucide-react';
@@ -69,9 +70,19 @@ export function Header() {
     <header className="sticky top-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800">
       {/* 桌面端导航 - 更宽 */}
       <div className="hidden lg:flex max-w-6xl mx-auto px-6 h-14 items-center justify-between">
-        {/* Logo - 渐变效果 */}
-        <Link href="/" className="text-2xl font-bold bg-gradient-to-r from-primary-500 to-primary-600 bg-clip-text text-transparent">
-          OpenNovel
+        {/* Logo - 图片 */}
+        <Link href="/" className="flex items-center gap-2">
+          <div className="relative w-8 h-8">
+            <Image
+              src="/LOGO.png"
+              alt="OpenNovel"
+              fill
+              className="object-contain"
+            />
+          </div>
+          <span className="text-2xl font-bold bg-gradient-to-r from-primary-500 to-primary-600 bg-clip-text text-transparent">
+            OpenNovel
+          </span>
         </Link>
 
         {/* 导航链接 */}
@@ -113,9 +124,19 @@ export function Header() {
 
       {/* 移动端导航 - 添加 hamburger 菜单 */}
       <div className="lg:hidden max-w-md mx-auto px-4 h-14 flex items-center justify-between">
-        {/* Logo - 渐变效果 */}
-        <Link href="/" className="text-xl font-bold bg-gradient-to-r from-primary-500 to-primary-600 bg-clip-text text-transparent">
-          OpenNovel
+        {/* Logo - 图片 */}
+        <Link href="/" className="flex items-center gap-2">
+          <div className="relative w-7 h-7">
+            <Image
+              src="/LOGO.png"
+              alt="OpenNovel"
+              fill
+              className="object-contain"
+            />
+          </div>
+          <span className="text-xl font-bold bg-gradient-to-r from-primary-500 to-primary-600 bg-clip-text text-transparent">
+            OpenNovel
+          </span>
         </Link>
 
         {/* 右侧按钮组：主题切换 + Hamburger */}
