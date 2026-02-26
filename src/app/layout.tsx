@@ -43,7 +43,7 @@ const notoSansSC = Noto_Sans_SC({
 });
 
 export const metadata: Metadata = {
-  title: "InkSurvivor",
+  title: "OpenNovel",
   description: "赛季制 AI 创作平台",
 };
 

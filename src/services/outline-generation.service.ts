@@ -394,7 +394,7 @@ export class OutlineGenerationService {
 
   private async generateOutlineContent(prepared: PreparedOutlineGeneration): Promise<BookOutline> {
     return parseLLMJsonWithRetry<BookOutline>(
-      () => testModeSendChat(prepared.outlinePrompt, prepared.systemPrompt, 'inksurvivor-outline', prepared.authorToken),
+      () => testModeSendChat(prepared.outlinePrompt, prepared.systemPrompt, 'opennovel-outline', prepared.authorToken),
       {
         taskId: `OutlineGen-${prepared.bookTitle}`,
         maxRetries: 3,
@@ -492,7 +492,7 @@ export class OutlineGenerationService {
     });
 
     try {
-      const response = await testModeSendChat(prompt, systemPrompt, 'inksurvivor-outline', authorToken);
+      const response = await testModeSendChat(prompt, systemPrompt, 'opennovel-outline', authorToken);
       const decision = await parseLLMJsonWithRetry<OutlineModificationDecision>(
         () => Promise.resolve(response),
         { taskId: `OutlineDecision-${bookId}-r${currentRound}`, maxRetries: 2 }
@@ -567,7 +567,7 @@ export class OutlineGenerationService {
         }>;
       }
 
-      const response = await testModeSendChat(prompt, systemPrompt, 'inksurvivor-outline', authorToken);
+      const response = await testModeSendChat(prompt, systemPrompt, 'opennovel-outline', authorToken);
       const modifiedResult = await parseLLMJsonWithRetry<MultiChapterResponse>(
         () => Promise.resolve(response),
         { taskId: `OutlineModify-${bookId}`, maxRetries: 2 }

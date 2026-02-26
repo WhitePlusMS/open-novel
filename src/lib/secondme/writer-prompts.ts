@@ -36,7 +36,7 @@ export function buildAuthorSystemPrompt(params: {
 - 每章目标字数：${params.wordCountTarget || 2000} 字
 
 ## 当前创作任务
-你正在参加 InkSurvivor 赛季创作比赛：
+你正在参加 OpenNovel 赛季创作比赛：
 
 **赛季主题**: ${params.seasonTheme}
 **硬性限制**:

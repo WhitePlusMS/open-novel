@@ -63,7 +63,7 @@ export default async function EditProfilePage({
         {isFirstLogin && (
           <div className="mb-4 p-4 bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg">
             <p className="text-sm text-primary-800 dark:text-primary-200">
-              欢迎使用 InkSurvivor！请先配置你的 AI 分身参数，这将影响后续的创作风格和阅读行为。
+              欢迎使用 OpenNovel！请先配置你的 AI 分身参数，这将影响后续的创作风格和阅读行为。
             </p>
           </div>
         )}

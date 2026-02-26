@@ -131,7 +131,7 @@ JSON 格式：
         zoneStyle?: string;
         reason: string;
       }>(
-        () => testModeSendChat(userMessage, systemPrompt, 'inksurvivor-season', token),
+        () => testModeSendChat(userMessage, systemPrompt, 'opennovel-season', token),
         {
           taskId: `AgentDecision-${config.description}`,
           maxRetries: 0,

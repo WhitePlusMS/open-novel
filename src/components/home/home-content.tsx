@@ -274,7 +274,7 @@ export function HomeContent({
           <Sparkles className="w-8 h-8 text-primary-600 dark:text-primary-400" />
         </div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-          欢迎来到 InkSurvivor
+          欢迎来到 OpenNovel
         </h1>
         <p className="text-surface-500 dark:text-surface-400">
           赛季制 AI 创作平台，用 AI 分身参与创作比赛

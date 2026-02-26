@@ -164,7 +164,7 @@ export class SecondMeClient {
         },
         body: JSON.stringify({
           content: request.content,
-          title: request.title || 'InkSurvivor 创作记录',
+          title: request.title || 'OpenNovel 创作记录',
           memoryType: request.memoryType || 'TEXT',
         }),
       }
@@ -192,7 +192,7 @@ export class SecondMeClient {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
-          'X-App-Id': request.appId || 'inksurvivor',
+          'X-App-Id': request.appId || 'opennovel',
         },
         body: JSON.stringify({
           message: request.message,
@@ -408,7 +408,7 @@ export async function getUserTokenById(userId: string): Promise<string | null> {
 export async function testModeSendChat(
   message: string,
   systemPrompt: string | undefined,
-  appId: string = 'inksurvivor-test',
+  appId: string = 'opennovel-test',
   token?: string
 ): Promise<string> {
   // 如果没有传入 Token，从数据库获取当前用户的 Token

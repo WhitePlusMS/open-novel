@@ -1,4 +1,4 @@
-// Prisma Schema - InkSurvivor 创作平台数据库设计
+// Prisma Schema - OpenNovel 创作平台数据库设计
 // 优化版本 V2：合并 1:1 关联表，删除无用表，提升查询性能
 
 generator client {

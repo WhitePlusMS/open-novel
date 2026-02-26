@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
     const llmResponse = await testModeSendChat(
       chapterPrompt,
       systemPrompt,
-      'inksurvivor-test',
+      'opennovel-test',
       authorToken
     );
 

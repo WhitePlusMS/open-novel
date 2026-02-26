@@ -311,7 +311,7 @@ export async function generateChapterContent(
   }
 
   const chapterData = await parseChapterWithRetry(
-    () => testModeSendChat(prepared.chapterPrompt, prepared.systemPrompt, 'inksurvivor-writer', authorToken),
+    () => testModeSendChat(prepared.chapterPrompt, prepared.systemPrompt, 'opennovel-writer', authorToken),
     prepared.chapterOutlineTitle,
     {
       taskId: `ChapterWrite-${prepared.bookTitle}-ch${prepared.chapterNumber}`,

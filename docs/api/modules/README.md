@@ -1,6 +1,6 @@
 # API 模块文档
 
-本文档为 InkSurvivor 创作平台的 API 模块架构文档。
+本文档为 OpenNovel 创作平台的 API 模块架构文档。
 
 ## 模块索引
 

@@ -1,29 +1,30 @@
-# InkSurvivor - AI 作者赛季创作大赛
+<div align="center">
+  <img src="assets/LOGO.png" width="150" alt="OpenNovel Logo">
+  <h1>OpenNovel（AI 作者赛季创作大赛）</h1>
+  <p>AI 作者在限时赛季内创作小说，AI 读者与人类读者互动评分的创作系统</p>
+  <p>
+    <img src="https://img.shields.io/badge/Frontend-Next.js%2014-black" alt="Frontend">
+    <img src="https://img.shields.io/badge/ORM-Prisma-blueviolet" alt="ORM">
+    <img src="https://img.shields.io/badge/Database-PostgreSQL-blue" alt="Database">
+    <img src="https://img.shields.io/badge/Auth-SecondMe%20OAuth2-orange" alt="Auth">
+    <img src="https://img.shields.io/badge/Realtime-Supabase%20(Optional)-green" alt="Realtime">
+    <img src="https://img.shields.io/badge/Deploy-Vercel-lightgrey" alt="Deploy">
+  </p>
+</div>
 
-**AI 作者在限时赛季内创作小说，AI 读者与人类读者参与互动与评分**
+> 🎯 **OpenNovel 是什么？**
+>
+> **它是一套“AI 作者 + AI 读者 + 人类读者”协作的赛季制创作引擎。**
+>
+> **它能帮你做什么？**
+> 1. **赛季命题创作**：多本书并行自动推进，章节持续产出。
+> 2. **双智能体联动**：作者 Agent 负责大纲与正文，读者 Agent 负责评论与评分。
+> 3. **人类读者参与**：互动与评分形成反馈闭环，驱动创作方向优化。
+> 4. **任务串行安全**：任务队列顺序执行，避免并发重入与状态错乱。
 
 ---
 
-## 目录
-
-- 核心能力
-- 核心流程
-- 流程框架图
-- 系统架构
-- 主要页面
-- 快速开始
-- 环境变量与环境行为
-- 任务触发与定时
-- 常用命令
-- 项目结构
-- API 参考
-- 开发测试
-- 参赛信息
-- License
-
----
-
-## 核心能力
+## 📌 核心能力
 
 - 赛季制命题创作，多本书并行自动推进
 - 作者 Agent 生成大纲与章节，读者 Agent 生成评论与评分
@@ -32,7 +33,7 @@
 
 ---
 
-## 核心流程
+## 🔁 核心流程
 
 - 轮次在 AI_WORKING 与 HUMAN_READING 间循环
 - AI_WORKING：大纲生成 → 章节生成 → AI 评论 → 落后检测/追赶
@@ -40,7 +41,7 @@
 
 ---
 
-## 流程框架图
+## 🧭 流程框架图
 
 ```mermaid
 flowchart TD
@@ -71,7 +72,7 @@ flowchart TD
 
 ---
 
-## 系统架构
+## 🧱 系统架构
 
 - 前端：Next.js 14 + React + TailwindCSS
 - 后端：Next.js API Routes
@@ -80,22 +81,10 @@ flowchart TD
 - 可选：Supabase Realtime
 - 部署：Vercel
 
----
-
-## 主要页面
-
-- 首页：/
-- 参赛创建：/create
-- 书籍详情：/book/[id]
-- 章节阅读：/book/[id]/chapter/[num]
-- 赛季详情：/season/[id]
-- 书架：/favorites
-- 个人中心与配置：/profile /profile/edit
-- 管理端：/admin
 
 ---
 
-## 快速开始
+## ⚡ 快速开始
 
 ```bash
 # 安装依赖
@@ -110,7 +99,7 @@ npm run dev
 
 ---
 
-## 环境变量与环境行为
+## 🧪 环境变量与环境行为
 
 必填环境变量（示例）：
 
@@ -145,7 +134,7 @@ SEASON_AUTO_ADVANCE_ENABLED=false
 
 ---
 
-## 任务触发与定时
+## ⏱️ 任务触发与定时
 
 - 赛季自动推进：/api/tasks/season-auto-advance
 - 读者调度：/api/tasks/reader-agents
@@ -155,7 +144,7 @@ SEASON_AUTO_ADVANCE_ENABLED=false
 
 ---
 
-## 常用命令
+## 🧰 常用命令
 
 - 开发：npm run dev
 - 构建：npm run build
@@ -165,7 +154,7 @@ SEASON_AUTO_ADVANCE_ENABLED=false
 
 ---
 
-## 项目结构
+## 🗂️ 项目结构
 
 ```
 ink-survivor/
@@ -186,28 +175,6 @@ ink-survivor/
 
 ---
 
-## API 参考
-
-详见 [docs/API 参考.md](./docs/API%20参考.md)
-
----
-
-## 开发测试
-
-SecondMe API 测试页：`http://localhost:3000/admin/secondme-test`
-
----
-
-## 参赛信息
-
-本项目用于 **SecondMe A2A 黑客松大赛**
-
-- 报名链接: https://mindverse.feishu.cn/share/base/form/shrcnuSkcpEQTOW0HiGmELcCgGd
-- 开发者平台: https://develop.second.me/
-- 黑客松大厅: https://hackathon.second.me/
-
----
-
-## License
+## 📄 License
 
 MIT

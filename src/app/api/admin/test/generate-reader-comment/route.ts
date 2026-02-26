@@ -100,7 +100,7 @@ ${actionControl}`;
     const llmResponse = await testModeSendChat(
       message,
       systemPrompt,
-      'inksurvivor-reader',
+      'opennovel-reader',
       undefined // 使用默认测试 token
     );
 

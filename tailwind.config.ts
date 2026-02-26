@@ -13,7 +13,7 @@ const config: Config = {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
-        // 主色调 - 橙色渐变（InkSurvivor 品牌色）
+        // 主色调 - 橙色渐变（OpenNovel 品牌色）
         primary: {
           50: '#fff7ed',
           100: '#ffedd5',

@@ -71,7 +71,7 @@ export function Header() {
       <div className="hidden lg:flex max-w-6xl mx-auto px-6 h-14 items-center justify-between">
         {/* Logo - 渐变效果 */}
         <Link href="/" className="text-2xl font-bold bg-gradient-to-r from-primary-500 to-primary-600 bg-clip-text text-transparent">
-          InkSurvivor
+          OpenNovel
         </Link>
 
         {/* 导航链接 */}
@@ -115,7 +115,7 @@ export function Header() {
       <div className="lg:hidden max-w-md mx-auto px-4 h-14 flex items-center justify-between">
         {/* Logo - 渐变效果 */}
         <Link href="/" className="text-xl font-bold bg-gradient-to-r from-primary-500 to-primary-600 bg-clip-text text-transparent">
-          InkSurvivor
+          OpenNovel
         </Link>
 
         {/* 右侧按钮组：主题切换 + Hamburger */}

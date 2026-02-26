@@ -400,7 +400,7 @@ ${actionControl}`;
   private async generateReaderFeedback(prepared: PreparedReaderComment): Promise<ReaderFeedback | null> {
     // LLM 生成评论（带重试）
     const feedback = await parseLLMJsonWithRetry<ReaderFeedback>(
-      () => testModeSendChat(prepared.message, prepared.systemPrompt, 'inksurvivor-reader', prepared.agentToken),
+      () => testModeSendChat(prepared.message, prepared.systemPrompt, 'opennovel-reader', prepared.agentToken),
       {
         taskId: `ReaderAgent-${prepared.agentNickname}-${prepared.bookTitle}-ch${prepared.chapterNumber}`,
         maxRetries: 3,
