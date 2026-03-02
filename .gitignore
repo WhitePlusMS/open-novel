@@ -36,6 +36,9 @@
 /docs/*
 !/docs/api/
 !/docs/api/**
+!/docs/components
+!/docs/database
+!/docs/pages
 
 # ====================
 # Debug
